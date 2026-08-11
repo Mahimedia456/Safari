@@ -1,0 +1,685 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ======================================================
+   SAFARI DESIGN TOKENS
+====================================================== */
+
+:root {
+  color-scheme: light;
+
+  --safari-page: #f5f7f6;
+
+  --safari-sidebar: #ffffff;
+
+  --safari-sidebar-footer:
+    rgba(255, 255, 255, 0.96);
+
+  --safari-topbar:
+    rgba(255, 255, 255, 0.88);
+
+  --safari-surface: #ffffff;
+
+  --safari-surface-soft: #f8faf9;
+
+  --safari-surface-hover: #f5f9f7;
+
+  --safari-input-bg: #f8faf9;
+
+  --safari-text: #233029;
+
+  --safari-text-strong: #0e1713;
+
+  --safari-text-secondary: #607168;
+
+  --safari-muted: #8b9a92;
+
+  --safari-placeholder: #9aa8a1;
+
+  --safari-border: #e4eae7;
+
+  --safari-border-soft: #edf1ef;
+
+  --safari-border-hover: #ced8d3;
+
+  --safari-sidebar-text: #53665d;
+
+  --safari-sidebar-icon: #8fa29a;
+
+  --safari-sidebar-section: #8b9d95;
+
+  --safari-nav-active: #eaf8f0;
+
+  --safari-nav-active-text: #087443;
+
+  --safari-nav-icon-active: #ffffff;
+
+  --safari-nav-hover: #f4f8f6;
+
+  --safari-nav-shadow:
+    0 1px 1px rgba(6, 95, 70, 0.02);
+
+  --safari-sidebar-shadow:
+    10px 0 35px rgba(15, 23, 42, 0.025);
+
+  --safari-card-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 8px 24px rgba(15, 23, 42, 0.035);
+
+  --safari-card-shadow-hover:
+    0 2px 4px rgba(15, 23, 42, 0.035),
+    0 14px 32px rgba(15, 23, 42, 0.055);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --safari-page: #090d0b;
+
+  --safari-sidebar: #0c110f;
+
+  --safari-sidebar-footer:
+    rgba(12, 17, 15, 0.98);
+
+  --safari-topbar:
+    rgba(10, 15, 13, 0.88);
+
+  --safari-surface: #111714;
+
+  --safari-surface-soft: #151c18;
+
+  --safari-surface-hover: #18211c;
+
+  --safari-input-bg: #121815;
+
+  --safari-text: #d4ddd8;
+
+  --safari-text-strong: #f4f7f5;
+
+  --safari-text-secondary: #a1afa8;
+
+  --safari-muted: #74837b;
+
+  --safari-placeholder: #66756d;
+
+  --safari-border:
+    rgba(255, 255, 255, 0.07);
+
+  --safari-border-soft:
+    rgba(255, 255, 255, 0.055);
+
+  --safari-border-hover:
+    rgba(255, 255, 255, 0.14);
+
+  --safari-sidebar-text: #a2b0a9;
+
+  --safari-sidebar-icon: #687970;
+
+  --safari-sidebar-section: #687a71;
+
+  --safari-nav-active:
+    rgba(5, 150, 105, 0.13);
+
+  --safari-nav-active-text: #4ade80;
+
+  --safari-nav-icon-active:
+    rgba(16, 185, 129, 0.09);
+
+  --safari-nav-hover:
+    rgba(255, 255, 255, 0.035);
+
+  --safari-nav-shadow:
+    inset 0 0 0 1px
+      rgba(16, 185, 129, 0.045);
+
+  --safari-sidebar-shadow:
+    12px 0 40px rgba(0, 0, 0, 0.18);
+
+  --safari-card-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.015),
+    0 12px 30px rgba(0, 0, 0, 0.12);
+
+  --safari-card-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.02),
+    0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+/* ======================================================
+   BASE
+====================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--safari-page);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+
+  margin: 0;
+
+  background:
+    radial-gradient(
+      circle at 80% -10%,
+      rgba(16, 185, 129, 0.025),
+      transparent 30%
+    ),
+    var(--safari-page);
+
+  color: var(--safari-text);
+
+  font-family:
+    Inter,
+    Manrope,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.dark body {
+  background:
+    radial-gradient(
+      circle at 75% -15%,
+      rgba(16, 185, 129, 0.045),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 0% 80%,
+      rgba(16, 185, 129, 0.018),
+      transparent 28%
+    ),
+    var(--safari-page);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background:
+    rgba(16, 185, 129, 0.18);
+
+  color: inherit;
+}
+
+/* ======================================================
+   SCROLLBARS
+====================================================== */
+
+* {
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    rgba(100, 116, 139, 0.32)
+    transparent;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+
+  background:
+    rgba(100, 116, 139, 0.28);
+
+  background-clip:
+    padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background:
+    rgba(100, 116, 139, 0.46);
+
+  background-clip:
+    padding-box;
+}
+
+.safari-sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.safari-sidebar-scroll::-webkit-scrollbar-thumb {
+  background:
+    rgba(100, 116, 139, 0.22);
+
+  background-clip:
+    padding-box;
+}
+
+/* ======================================================
+   COMPONENT UTILITIES
+====================================================== */
+
+@layer components {
+  .safari-card {
+    @apply rounded-2xl border;
+
+    position: relative;
+
+    border-color:
+      var(--safari-border);
+
+    background:
+      var(--safari-surface);
+
+    box-shadow:
+      var(--safari-card-shadow);
+
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms ease;
+  }
+
+  .safari-card-hover {
+    @apply safari-card;
+  }
+
+  .safari-card-hover:hover {
+    transform:
+      translateY(-2px);
+
+    border-color:
+      rgba(16, 185, 129, 0.16);
+
+    box-shadow:
+      var(
+        --safari-card-shadow-hover
+      );
+  }
+
+  .safari-stat-card {
+    @apply relative overflow-hidden rounded-2xl border p-5;
+
+    min-height: 178px;
+
+    border-color:
+      var(--safari-border);
+
+    background:
+      var(--safari-surface);
+
+    box-shadow:
+      var(--safari-card-shadow);
+
+    transition:
+      transform 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .safari-stat-card:hover {
+    transform:
+      translateY(-2px);
+
+    border-color:
+      rgba(16, 185, 129, 0.17);
+
+    box-shadow:
+      var(
+        --safari-card-shadow-hover
+      );
+  }
+
+  .safari-input {
+    @apply h-11 w-full rounded-xl border px-3.5 text-sm outline-none;
+
+    border-color:
+      var(--safari-border);
+
+    background:
+      var(--safari-input-bg);
+
+    color:
+      var(--safari-text);
+
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .safari-input:hover {
+    border-color:
+      var(
+        --safari-border-hover
+      );
+  }
+
+  .safari-input:focus {
+    border-color: #10b981;
+
+    background:
+      var(--safari-surface);
+
+    box-shadow:
+      0 0 0 4px
+      rgba(16, 185, 129, 0.09);
+  }
+
+  .safari-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .safari-input::placeholder {
+    color:
+      var(
+        --safari-placeholder
+      );
+  }
+
+  .safari-select {
+    @apply h-11 w-full rounded-xl border px-3.5 text-sm outline-none;
+
+    border-color:
+      var(--safari-border);
+
+    background-color:
+      var(--safari-surface);
+
+    color:
+      var(--safari-text);
+
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .safari-select:hover {
+    border-color:
+      var(
+        --safari-border-hover
+      );
+  }
+
+  .safari-select:focus {
+    border-color: #10b981;
+
+    box-shadow:
+      0 0 0 4px
+      rgba(16, 185, 129, 0.09);
+  }
+
+  .safari-icon-button {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border;
+
+    border-color:
+      var(--safari-border);
+
+    background:
+      var(--safari-surface);
+
+    color:
+      var(
+        --safari-text-secondary
+      );
+
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .safari-icon-button:hover {
+    transform:
+      translateY(-1px);
+
+    border-color:
+      var(
+        --safari-border-hover
+      );
+
+    background:
+      var(
+        --safari-surface-hover
+      );
+
+    color:
+      var(
+        --safari-text-strong
+      );
+
+    box-shadow:
+      var(
+        --safari-card-shadow
+      );
+  }
+
+  .safari-primary-button {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-white;
+
+    background:
+      linear-gradient(
+        135deg,
+        #10a662 0%,
+        #087a49 100%
+      );
+
+    box-shadow:
+      0 5px 14px
+      rgba(5, 150, 105, 0.16);
+
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      filter 180ms ease;
+  }
+
+  .safari-primary-button:hover {
+    transform:
+      translateY(-1px);
+
+    filter:
+      brightness(1.03);
+
+    box-shadow:
+      0 8px 18px
+      rgba(5, 150, 105, 0.22);
+  }
+
+  .safari-secondary-button {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold;
+
+    border-color:
+      var(--safari-border);
+
+    background:
+      var(--safari-surface);
+
+    color:
+      var(--safari-text);
+
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease;
+  }
+
+  .safari-secondary-button:hover {
+    transform:
+      translateY(-1px);
+
+    border-color:
+      var(
+        --safari-border-hover
+      );
+
+    background:
+      var(
+        --safari-surface-hover
+      );
+  }
+
+  .safari-page-title {
+    @apply text-3xl font-extrabold tracking-tight;
+
+    color:
+      var(
+        --safari-text-strong
+      );
+  }
+
+  .safari-page-description {
+    @apply mt-2 text-sm leading-6;
+
+    color:
+      var(
+        --safari-text-secondary
+      );
+  }
+
+  .safari-section-title {
+    @apply text-base font-bold;
+
+    color:
+      var(
+        --safari-text-strong
+      );
+  }
+
+  .safari-label {
+    @apply text-xs font-semibold;
+
+    color:
+      var(--safari-muted);
+  }
+}
+
+/* ======================================================
+   TABLES
+====================================================== */
+
+table {
+  border-collapse:
+    separate;
+
+  border-spacing: 0;
+}
+
+thead {
+  color:
+    var(--safari-muted);
+}
+
+tbody tr {
+  transition:
+    background-color 160ms ease;
+}
+
+tbody tr:hover {
+  background:
+    var(
+      --safari-surface-soft
+    );
+}
+
+/* ======================================================
+   FORM ELEMENTS
+====================================================== */
+
+select option {
+  background:
+    var(--safari-surface);
+
+  color:
+    var(--safari-text);
+}
+
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  color-scheme: light;
+}
+
+.dark input[type="date"],
+.dark input[type="datetime-local"],
+.dark input[type="time"] {
+  color-scheme: dark;
+}
+
+/* ======================================================
+   FOCUS ACCESSIBILITY
+====================================================== */
+
+:focus-visible {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible {
+  box-shadow:
+    0 0 0 3px
+    rgba(16, 185, 129, 0.13);
+}
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+
+@media (
+  max-width: 640px
+) {
+  .safari-stat-card {
+    min-height: 160px;
+  }
+}
+
+/* ======================================================
+   REDUCED MOTION
+====================================================== */
+
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    transition-duration:
+      0.01ms !important;
+
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+  }
+}

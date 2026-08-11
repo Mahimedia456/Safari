@@ -1,0 +1,318 @@
+/* =========================================================
+   SCROLLBAR HELPERS
+========================================================= */
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* =========================================================
+   TEXT HELPERS
+========================================================= */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.uppercase-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  line-height: 1.2;
+
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   MEDIA HELPERS
+========================================================= */
+
+.media-cover {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.media-contain {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+.clip-media {
+  overflow: hidden;
+}
+
+.full-bleed {
+  position: relative;
+
+  left: 50%;
+
+  width: 100vw;
+
+  margin-left: -50vw;
+}
+
+/* =========================================================
+   BORDERS
+========================================================= */
+
+.hairline-top {
+  border-top: 1px solid var(--safari-border);
+}
+
+.hairline-bottom {
+  border-bottom: 1px solid var(--safari-border);
+}
+
+.hairline-left {
+  border-left: 1px solid var(--safari-border);
+}
+
+.hairline-right {
+  border-right: 1px solid var(--safari-border);
+}
+
+/* =========================================================
+   LINK UNDERLINE
+========================================================= */
+
+.safari-link-line {
+  position: relative;
+
+  display: inline-flex;
+
+  width: fit-content;
+}
+
+.safari-link-line::after {
+  position: absolute;
+
+  right: 0;
+  bottom: -4px;
+  left: 0;
+
+  height: 1px;
+
+  background: currentColor;
+
+  content: "";
+
+  transform: scaleX(1);
+
+  transform-origin: right center;
+
+  transition:
+    transform 500ms var(--ease-safari);
+}
+
+.safari-link-line:hover::after {
+  transform: scaleX(0);
+
+  transform-origin: left center;
+}
+
+/* =========================================================
+   IMAGE OVERLAYS
+========================================================= */
+
+.image-overlay-dark {
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.image-overlay-bottom {
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 0, 0.2) 45%,
+      rgba(0, 0, 0, 0) 75%
+    );
+}
+
+.image-overlay-left {
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0.2) 48%,
+      rgba(0, 0, 0, 0) 76%
+    );
+}
+
+/* =========================================================
+   STICKY STORY SECTIONS
+========================================================= */
+
+.story-stack {
+  position: relative;
+
+  width: 100%;
+}
+
+.story-panel {
+  position: sticky;
+
+  top: var(--header-height);
+
+  width: 100%;
+  height: calc(100vh - var(--header-height));
+
+  min-height: 680px;
+
+  overflow: hidden;
+}
+
+/*
+Use unique z-index inline or through Tailwind per panel.
+
+Example:
+
+style={{
+  zIndex: 20 + index,
+}}
+*/
+
+/* =========================================================
+   MEDIA ZOOM
+========================================================= */
+
+.media-zoom {
+  transform: scale(1);
+
+  transition:
+    transform 1400ms
+    var(--ease-safari);
+}
+
+.media-zoom:hover {
+  transform: scale(1.025);
+}
+
+/* =========================================================
+   ABSOLUTE FILL
+========================================================= */
+
+.absolute-fill {
+  position: absolute;
+
+  inset: 0;
+}
+
+/* =========================================================
+   FLEX CENTER
+========================================================= */
+
+.flex-center {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================================
+   VISUALLY HIDDEN
+========================================================= */
+
+.sr-only-custom {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  padding: 0;
+  margin: -1px;
+
+  overflow: hidden;
+
+  clip: rect(0, 0, 0, 0);
+
+  white-space: nowrap;
+
+  border: 0;
+}
+
+/* =========================================================
+   MOBILE / TABLET
+========================================================= */
+
+@media (max-width: 1023px) {
+  /*
+  Story panels can remain sticky on tablet/mobile.
+
+  If a specific mobile device gives issues,
+  apply class "story-panel-mobile-static"
+  on that component.
+  */
+
+  .story-panel-mobile-static {
+    position: relative !important;
+
+    top: auto !important;
+
+    height: auto !important;
+
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .full-bleed-mobile {
+    position: relative;
+
+    left: 50%;
+
+    width: 100vw;
+
+    margin-left: -50vw;
+  }
+
+  .story-panel {
+    min-height: 640px;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .media-zoom {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .safari-link-line::after {
+    transition: none !important;
+  }
+}

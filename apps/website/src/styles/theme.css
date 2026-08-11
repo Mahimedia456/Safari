@@ -1,0 +1,17 @@
+:root {
+  --color-background: #ffffff;
+  --color-surface: #f3f0e8;
+  --color-text: #090909;
+  --color-text-secondary: #6e6e68;
+
+  --color-brand: #087a46;
+  --color-brand-dark: #045e35;
+
+  --page-gutter: clamp(20px, 4vw, 72px);
+  --section-space: clamp(88px, 12vw, 200px);
+
+  --header-height: 76px;
+
+  --ease-premium:
+    cubic-bezier(0.16, 1, 0.3, 1);
+}

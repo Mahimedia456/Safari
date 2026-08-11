@@ -1,0 +1,347 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   ROOT / DOCUMENT
+========================================================= */
+
+html {
+  width: 100%;
+  min-width: 320px;
+
+  background: var(--safari-white);
+  color: var(--safari-black);
+
+  font-family: "Manrope", Arial, sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  text-rendering: optimizeLegibility;
+  scroll-behavior: auto;
+}
+
+body {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100vh;
+
+  margin: 0;
+  padding: 0;
+
+  background: var(--safari-white);
+  color: var(--safari-black);
+
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* =========================================================
+   BOX SIZING
+========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   LENIS
+========================================================= */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* =========================================================
+   MEDIA
+========================================================= */
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+video {
+  width: 100%;
+}
+
+/* =========================================================
+   FORM ELEMENTS
+========================================================= */
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+a {
+  cursor: pointer;
+}
+
+/* =========================================================
+   LINKS
+========================================================= */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* =========================================================
+   TEXT SELECTION
+========================================================= */
+
+::selection {
+  background: var(--safari-green);
+  color: var(--safari-white);
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.safari-page {
+  position: relative;
+
+  width: 100%;
+
+  background: var(--safari-white);
+}
+
+/*
+IMPORTANT:
+
+Do NOT put:
+
+overflow: hidden;
+overflow: clip;
+
+on .safari-page.
+
+ServicesStory and CityStory use position: sticky.
+Parent overflow can break sticky positioning.
+*/
+
+/* =========================================================
+   GENERAL SECTION SYSTEM
+========================================================= */
+
+.safari-section {
+  position: relative;
+
+  width: 100%;
+
+  padding-inline: var(--page-gutter);
+}
+
+.safari-section-space {
+  padding-top: var(--section-space);
+  padding-bottom: var(--section-space);
+}
+
+.safari-content {
+  width: 100%;
+  max-width: 1800px;
+
+  margin-inline: auto;
+}
+
+/* =========================================================
+   TYPOGRAPHY
+========================================================= */
+
+.display-hero {
+  margin: 0;
+
+  font-size: clamp(4.25rem, 11vw, 12rem);
+  font-weight: 600;
+
+  line-height: 0.82;
+
+  letter-spacing: -0.075em;
+}
+
+.display-xl {
+  margin: 0;
+
+  font-size: clamp(3.8rem, 9vw, 10rem);
+  font-weight: 600;
+
+  line-height: 0.86;
+
+  letter-spacing: -0.07em;
+}
+
+.display-lg {
+  margin: 0;
+
+  font-size: clamp(3rem, 7vw, 8rem);
+  font-weight: 600;
+
+  line-height: 0.9;
+
+  letter-spacing: -0.06em;
+}
+
+.display-md {
+  margin: 0;
+
+  font-size: clamp(2.5rem, 5vw, 5.5rem);
+  font-weight: 600;
+
+  line-height: 0.94;
+
+  letter-spacing: -0.055em;
+}
+
+.editorial-copy {
+  font-size: clamp(1.1rem, 1.55vw, 1.55rem);
+
+  line-height: 1.5;
+
+  letter-spacing: -0.025em;
+}
+
+/* =========================================================
+   HEADINGS
+========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-top: 0;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--safari-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* =========================================================
+   FOCUS
+========================================================= */
+
+:focus-visible {
+  outline: 2px solid var(--safari-green);
+  outline-offset: 4px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1023px) {
+  .display-hero {
+    line-height: 0.84;
+  }
+
+  .display-xl {
+    line-height: 0.88;
+  }
+
+  .display-lg {
+    line-height: 0.9;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --header-height: 70px;
+  }
+
+  .safari-section-space {
+    padding-top: clamp(80px, 18vw, 120px);
+    padding-bottom: clamp(80px, 18vw, 120px);
+  }
+
+  .editorial-copy {
+    font-size: 1.05rem;
+    line-height: 1.55;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY / REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+
+    scroll-behavior: auto !important;
+  }
+}
