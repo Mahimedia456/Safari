@@ -212,7 +212,7 @@ export default function DriverDetailPage() {
 
             <Info
               icon={MapPin}
-              label="Region"
+              label="Market"
               value={`${driver.city}, ${driver.region}`}
             />
 

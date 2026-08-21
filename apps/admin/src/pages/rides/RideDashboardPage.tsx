@@ -15,13 +15,11 @@ export default function RideDashboardPage() {
     );
 
   const activeRides =
-    rides.filter(
+    (rides ?? []).filter(
       (ride) =>
-        ![
-          "completed",
+        ride.status !== "completed" &&
+        !ride.status.startsWith(
           "cancelled",
-        ].includes(
-          ride.status,
         ),
     );
 

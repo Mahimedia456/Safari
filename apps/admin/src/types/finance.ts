@@ -1,10 +1,10 @@
-export type FinanceRegion =
+export type FinanceMarket =
   | "Pakistan"
-  | "Germany";
+  | "Pakistan";
 
 export type FinanceCurrency =
   | "PKR"
-  | "EUR";
+  | "PKR";
 
 export type FinanceModule =
   | "ride"
@@ -32,7 +32,7 @@ export type TransactionStatus =
 export interface FinanceTransaction {
   id: string;
 
-  region: FinanceRegion;
+  region: FinanceMarket;
   currency: FinanceCurrency;
 
   module: FinanceModule;
@@ -68,7 +68,7 @@ export type CommissionPartnerType =
 export interface CommissionRecord {
   id: string;
 
-  region: FinanceRegion;
+  region: FinanceMarket;
   currency: FinanceCurrency;
 
   partnerId: string;
@@ -103,7 +103,7 @@ export type PayoutStatus =
 export interface FinancePayout {
   id: string;
 
-  region: FinanceRegion;
+  region: FinanceMarket;
   currency: FinanceCurrency;
 
   recipientId: string;
@@ -132,7 +132,7 @@ export type FinanceRefundStatus =
 export interface FinanceRefund {
   id: string;
 
-  region: FinanceRegion;
+  region: FinanceMarket;
   currency: FinanceCurrency;
 
   module: FinanceModule;
@@ -154,7 +154,7 @@ export interface FinanceRefund {
 export interface WalletLedgerEntry {
   id: string;
 
-  region: FinanceRegion;
+  region: FinanceMarket;
   currency: FinanceCurrency;
 
   ownerId: string;
@@ -181,7 +181,7 @@ export interface WalletLedgerEntry {
 export interface SettlementRecord {
   id: string;
 
-  region: FinanceRegion;
+  region: FinanceMarket;
   currency: FinanceCurrency;
 
   period: string;

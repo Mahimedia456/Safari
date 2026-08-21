@@ -812,7 +812,7 @@ export const dummyMerchants: Merchant[] =
         "max@berlinbites.de",
 
       phone:
-        "+49 151 2345678",
+        "+92 151 2345678",
 
       type:
         "food",
@@ -821,7 +821,7 @@ export const dummyMerchants: Merchant[] =
         "approved",
 
       country:
-        "Germany",
+        "Pakistan",
 
       city:
         "Berlin",
@@ -856,7 +856,7 @@ export const dummyMerchants: Merchant[] =
             "Berlin",
 
           country:
-            "Germany",
+            "Pakistan",
 
           status:
             "active",
@@ -882,7 +882,7 @@ export const dummyMerchants: Merchant[] =
           "DE89370400440532013000",
 
         currency:
-          "EUR",
+          "PKR",
 
         verified:
           true,

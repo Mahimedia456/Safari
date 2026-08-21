@@ -73,7 +73,7 @@ export default function GroceryProductTable({
           </thead>
 
           <tbody>
-            {products.map(
+            {(products ?? []).map(
               (product) => {
                 const lowStock =
                   product.stock <=

@@ -15,8 +15,8 @@ export default function DriverWalletPanel({
 }) {
   const symbol =
     driver.region ===
-    "Germany"
-      ? "€"
+    "Pakistan"
+      ? "Rs "
       : "Rs ";
 
   return (

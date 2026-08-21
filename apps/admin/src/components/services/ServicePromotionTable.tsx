@@ -52,7 +52,7 @@ export default function ServicePromotionTable({
           </thead>
 
           <tbody>
-            {promotions.map(
+            {(promotions ?? []).map(
               (promotion) => (
                 <tr
                   key={

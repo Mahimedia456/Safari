@@ -62,7 +62,7 @@ export default function PharmacyCategoriesPage() {
           </thead>
 
           <tbody>
-            {categories.map(
+            {(categories ?? []).map(
               (category) => (
                 <tr
                   key={

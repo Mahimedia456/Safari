@@ -39,7 +39,7 @@ export default function GroceryCategoryTable({
         </thead>
 
         <tbody>
-          {categories.map(
+          {(categories ?? []).map(
             (category) => (
               <tr
                 key={

@@ -185,15 +185,11 @@ export default function StoreFilters({
         }
       >
         <option value="all">
-          All countries
+          Pakistan
         </option>
 
         <option value="Pakistan">
           Pakistan
-        </option>
-
-        <option value="Germany">
-          Germany
         </option>
       </select>
     </div>

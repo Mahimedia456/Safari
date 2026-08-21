@@ -63,7 +63,7 @@ export default function FoodPromotionTable({
           </thead>
 
           <tbody>
-            {promotions.map(
+            {(promotions ?? []).map(
               (
                 promotion,
               ) => (

@@ -1,16 +1,12 @@
-import {
-  create,
-} from "zustand";
+import { create } from "zustand";
 
 import {
-  dummyGroceryBrands,
-  dummyGroceryCategories,
-  dummyGroceryOrders,
-  dummyGroceryProducts,
-  dummyGroceryPromotions,
-  dummyGroceryRefunds,
-  dummyGrocerySubstitutions,
-} from "../data/grocery";
+  adminCommerceService,
+} from "../services/commerceService";
+
+import {
+  useAuthStore,
+} from "./authStore";
 
 import type {
   GroceryBrand,
@@ -23,244 +19,241 @@ import type {
   GrocerySubstitution,
 } from "../types/grocery";
 
-interface GroceryState {
+type GroceryState = {
+  loading: boolean;
+  loaded: boolean;
+  error: string | null;
+
   orders: GroceryOrder[];
-
   products: GroceryProduct[];
-
   categories: GroceryCategory[];
-
   brands: GroceryBrand[];
+  substitutions: GrocerySubstitution[];
+  promotions: GroceryPromotion[];
+  refunds: GroceryRefund[];
 
-  substitutions:
-    GrocerySubstitution[];
-
-  promotions:
-    GroceryPromotion[];
-
-  refunds:
-    GroceryRefund[];
+  load: () => Promise<void>;
 
   setOrderStatus: (
     orderId: string,
     status: GroceryOrderStatus,
-  ) => void;
+  ) => Promise<void>;
 
-  toggleProductAvailability: (
-    productId: string,
-  ) => void;
-
-  updateStock: (
-    productId: string,
-    stock: number,
-  ) => void;
-
-  toggleCategory: (
-    categoryId: string,
-  ) => void;
-
-  toggleBrand: (
-    brandId: string,
-  ) => void;
-
+  toggleProductAvailability: (productId: string) => void;
+  updateStock: (productId: string, stock: number) => void;
+  toggleCategory: (categoryId: string) => void;
+  toggleBrand: (brandId: string) => void;
   setSubstitutionDecision: (
     substitutionId: string,
-    decision:
-      | "accepted"
-      | "rejected",
+    decision: "accepted" | "rejected",
   ) => void;
-
-  togglePromotion: (
-    promotionId: string,
-  ) => void;
-
+  togglePromotion: (promotionId: string) => void;
   setRefundStatus: (
     refundId: string,
-    status:
-      | "approved"
-      | "rejected",
+    status: "approved" | "rejected",
   ) => void;
+};
+
+function token() {
+  const value =
+    useAuthStore.getState()
+      .accessToken;
+
+  if (!value) {
+    throw new Error(
+      "Safari admin session is required.",
+    );
+  }
+
+  return value;
+}
+
+function normalizeStatus(
+  value: string,
+): GroceryOrderStatus {
+  if (
+    value ===
+    "preparing"
+  ) {
+    return "picking";
+  }
+
+  if (
+    value ===
+      "ready_for_pickup" ||
+    value === "packed"
+  ) {
+    return "packed";
+  }
+
+  if (
+    value.startsWith(
+      "cancelled",
+    )
+  ) {
+    return "cancelled";
+  }
+
+  return value as GroceryOrderStatus;
 }
 
 export const useGroceryStore =
-  create<GroceryState>(
-    (set) => ({
-      orders:
-        dummyGroceryOrders,
+  create<GroceryState>((set, get) => ({
+    loading: false,
+    loaded: false,
+    error: null,
 
-      products:
-        dummyGroceryProducts,
+    orders: [],
+    products: [],
+    categories: [],
+    brands: [],
+    substitutions: [],
+    promotions: [],
+    refunds: [],
 
-      categories:
-        dummyGroceryCategories,
+    load: async () => {
+      set({
+        loading: true,
+        error: null,
+      });
 
-      brands:
-        dummyGroceryBrands,
+      try {
+        const [
+          ordersData,
+          storesData,
+        ] =
+          await Promise.all([
+            adminCommerceService.orders(
+              token(),
+              "grocery",
+            ),
+            adminCommerceService.stores(
+              token(),
+              "grocery",
+            ),
+          ]);
 
-      substitutions:
-        dummyGrocerySubstitutions,
+        const stores =
+          new Map(
+            (
+              storesData.stores ??
+              []
+            ).map(
+              (store) => [
+                store.id,
+                store.name,
+              ],
+            ),
+          );
 
-      promotions:
-        dummyGroceryPromotions,
+        const orders =
+          (
+            ordersData.orders ??
+            []
+          ).map(
+            (
+              order,
+            ): GroceryOrder => ({
+              id:
+                order.id,
+              storeId:
+                order.store_id,
+              storeName:
+                stores.get(
+                  order.store_id,
+                ) ??
+                "Safari Grocery",
+              customerName:
+                order.passenger_id,
+              customerPhone:
+                "—",
+              status:
+                normalizeStatus(
+                  order.status,
+                ),
+              items: [],
+              subtotal:
+                Number(
+                  order.total ??
+                    0,
+                ),
+              deliveryFee:
+                0,
+              serviceFee:
+                0,
+              discount: 0,
+              total:
+                Number(
+                  order.total ??
+                    0,
+                ),
+              paymentMethod:
+                (
+                  order.payment_method ||
+                  "cash"
+                ) as GroceryOrder["paymentMethod"],
+              deliveryAddress:
+                order.delivery_address ??
+                "—",
+              createdAt:
+                order.created_at,
+            }),
+          );
 
-      refunds:
-        dummyGroceryRefunds,
+        set({
+          orders,
+          loaded: true,
+        });
+      } catch (error) {
+        set({
+          orders: [],
+          loaded: true,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Could not load Safari Grocery.",
+        });
+      } finally {
+        set({
+          loading: false,
+        });
+      }
+    },
 
-      setOrderStatus: (
+    setOrderStatus:
+      async (
         orderId,
         status,
       ) => {
-        set((state) => ({
-          orders:
-            state.orders.map(
-              (order) =>
-                order.id ===
-                orderId
-                  ? {
-                      ...order,
-                      status,
-                    }
-                  : order,
-            ),
-        }));
+        const apiStatus =
+          status === "picking"
+            ? "preparing"
+            : status ===
+                "packed"
+              ? "ready_for_pickup"
+              : status ===
+                  "cancelled"
+                ? "cancelled_by_admin"
+                : status;
+
+        await adminCommerceService.updateOrderStatus(
+          token(),
+          "grocery",
+          orderId,
+          {
+            status:
+              apiStatus as any,
+          },
+        );
+
+        await get().load();
       },
 
-      toggleProductAvailability:
-        (productId) => {
-          set((state) => ({
-            products:
-              state.products.map(
-                (product) =>
-                  product.id ===
-                  productId
-                    ? {
-                        ...product,
-                        available:
-                          !product.available,
-                      }
-                    : product,
-              ),
-          }));
-        },
-
-      updateStock: (
-        productId,
-        stock,
-      ) => {
-        set((state) => ({
-          products:
-            state.products.map(
-              (product) =>
-                product.id ===
-                productId
-                  ? {
-                      ...product,
-                      stock:
-                        Math.max(
-                          0,
-                          stock,
-                        ),
-                    }
-                  : product,
-            ),
-        }));
-      },
-
-      toggleCategory: (
-        categoryId,
-      ) => {
-        set((state) => ({
-          categories:
-            state.categories.map(
-              (category) =>
-                category.id ===
-                categoryId
-                  ? {
-                      ...category,
-                      active:
-                        !category.active,
-                    }
-                  : category,
-            ),
-        }));
-      },
-
-      toggleBrand: (
-        brandId,
-      ) => {
-        set((state) => ({
-          brands:
-            state.brands.map(
-              (brand) =>
-                brand.id ===
-                brandId
-                  ? {
-                      ...brand,
-                      active:
-                        !brand.active,
-                    }
-                  : brand,
-            ),
-        }));
-      },
-
-      setSubstitutionDecision:
-        (
-          substitutionId,
-          decision,
-        ) => {
-          set((state) => ({
-            substitutions:
-              state.substitutions.map(
-                (item) =>
-                  item.id ===
-                  substitutionId
-                    ? {
-                        ...item,
-                        customerDecision:
-                          decision,
-                      }
-                    : item,
-              ),
-          }));
-        },
-
-      togglePromotion: (
-        promotionId,
-      ) => {
-        set((state) => ({
-          promotions:
-            state.promotions.map(
-              (promotion) =>
-                promotion.id ===
-                promotionId
-                  ? {
-                      ...promotion,
-                      active:
-                        !promotion.active,
-                    }
-                  : promotion,
-            ),
-        }));
-      },
-
-      setRefundStatus: (
-        refundId,
-        status,
-      ) => {
-        set((state) => ({
-          refunds:
-            state.refunds.map(
-              (refund) =>
-                refund.id ===
-                refundId
-                  ? {
-                      ...refund,
-                      status,
-                    }
-                  : refund,
-            ),
-        }));
-      },
-    }),
-  );
+    toggleProductAvailability: () => undefined,
+    updateStock: () => undefined,
+    toggleCategory: () => undefined,
+    toggleBrand: () => undefined,
+    setSubstitutionDecision: () => undefined,
+    togglePromotion: () => undefined,
+    setRefundStatus: () => undefined,
+  }));

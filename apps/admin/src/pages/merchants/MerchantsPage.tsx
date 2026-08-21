@@ -51,7 +51,7 @@ export default function MerchantsPage() {
           .trim()
           .toLowerCase();
 
-      return merchants.filter(
+      return (merchants ?? []).filter(
         (merchant) => {
           const matchesSearch =
             !search ||

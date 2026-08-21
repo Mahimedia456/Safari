@@ -11,19 +11,19 @@ import {
 
 export default function DriverDashboardPage() {
   const drivers =
-    useDriverStore(
+    (useDriverStore(
       (state) =>
         state.drivers,
-    );
+    ) ?? []);
 
   const applications =
-    useDriverStore(
+    (useDriverStore(
       (state) =>
         state.applications,
-    );
+    ) ?? []);
 
   const pending =
-    applications.filter(
+    (applications ?? []).filter(
       (application) =>
         [
           "pending",

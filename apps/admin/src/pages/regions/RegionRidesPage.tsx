@@ -6,7 +6,7 @@ import {
 import RegionRideMatrix from "../../components/regions/RegionRideMatrix";
 
 import {
-  getRegionPermissions,
+  getMarketPermissions,
 } from "../../config/regionPermissions";
 
 import {
@@ -14,7 +14,7 @@ import {
 } from "../../store/authStore";
 
 import {
-  useRegionStore,
+  useMarketStore,
 } from "../../store/regionStore";
 
 export default function RegionRidesPage() {
@@ -29,7 +29,7 @@ export default function RegionRidesPage() {
     );
 
   const region =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.regions.find(
           (item) =>
@@ -52,7 +52,7 @@ export default function RegionRidesPage() {
   }
 
   const permissions =
-    getRegionPermissions(
+    getMarketPermissions(
       user.role,
     );
 

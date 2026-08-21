@@ -16,20 +16,20 @@ export default function DriverStats({
   drivers: Driver[];
 }) {
   const online =
-    drivers.filter(
+    (drivers ?? []).filter(
       (driver) =>
         driver.online,
     ).length;
 
   const active =
-    drivers.filter(
+    (drivers ?? []).filter(
       (driver) =>
         driver.status ===
         "active",
     ).length;
 
   const verified =
-    drivers.filter(
+    (drivers ?? []).filter(
       (driver) =>
         driver.verificationStatus ===
         "verified",

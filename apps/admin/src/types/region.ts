@@ -1,120 +1,82 @@
-export type RegionCode =
-  | "PK"
-  | "DE";
+export type MarketCode =
+  "PK";
 
-export type RegionName =
-  | "Pakistan"
-  | "Germany";
+export type MarketName =
+  "Pakistan";
 
-export type RegionStatus =
+export type MarketStatus =
   | "active"
   | "maintenance"
   | "disabled";
 
-export type RegionCurrency =
-  | "PKR"
-  | "EUR";
+export type MarketCurrency =
+  "PKR";
 
-export type RegionServiceType =
+export type MarketServiceType =
   | "food"
   | "grocery"
   | "pharmacy"
   | "services";
 
-export type RegionRideType =
+export type MarketRideType =
   | "bike"
   | "economy"
   | "comfort"
   | "premium";
 
-export interface RegionServiceAvailability {
-  service: RegionServiceType;
-
+export interface MarketServiceAvailability {
+  service: MarketServiceType;
   enabled: boolean;
-
   acceptingNewMerchants: boolean;
 }
 
-export interface RegionRideAvailability {
-  rideType: RegionRideType;
-
+export interface MarketRideAvailability {
+  rideType: MarketRideType;
   enabled: boolean;
-
   acceptingNewDrivers: boolean;
 }
 
-export interface RegionLocalization {
+export interface MarketLocalization {
   defaultLanguage: string;
-
   supportedLanguages: string[];
-
   timezone: string;
-
   dateFormat: string;
-
-  timeFormat:
-    | "12h"
-    | "24h";
-
+  timeFormat: "12h" | "24h";
   phonePrefix: string;
 }
 
-export interface RegionSupport {
+export interface MarketSupport {
   supportEmail: string;
-
   supportPhone: string;
-
   emergencyPhone: string;
-
   emergencyMessage: string;
 }
 
-export interface RegionOperations {
+export interface MarketOperations {
   passengerRegistrationEnabled: boolean;
-
   driverRegistrationEnabled: boolean;
-
   merchantRegistrationEnabled: boolean;
-
   rideBookingEnabled: boolean;
-
   scheduledRidesEnabled: boolean;
-
   cashPaymentsEnabled: boolean;
-
   cardPaymentsEnabled: boolean;
-
   walletPaymentsEnabled: boolean;
 }
 
-export interface SafariRegion {
+export interface SafariMarket {
   id: string;
-
-  code: RegionCode;
-
-  name: RegionName;
-
-  currency: RegionCurrency;
-
+  code: MarketCode;
+  name: MarketName;
+  currency: MarketCurrency;
   currencySymbol: string;
-
-  status: RegionStatus;
-
+  status: MarketStatus;
   flagEmoji: string;
-
   activeCities: string[];
-
-  services: RegionServiceAvailability[];
-
-  rides: RegionRideAvailability[];
-
-  localization: RegionLocalization;
-
-  support: RegionSupport;
-
-  operations: RegionOperations;
-
+  services: MarketServiceAvailability[];
+  rides: MarketRideAvailability[];
+  localization: MarketLocalization;
+  support: MarketSupport;
+  operations: MarketOperations;
   createdAt: string;
-
   updatedAt: string;
 }

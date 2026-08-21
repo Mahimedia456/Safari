@@ -55,7 +55,7 @@ export default function PassengerFlagTable({
           </thead>
 
           <tbody>
-            {flags.map(
+            {(flags ?? []).map(
               (flag) => (
                 <tr
                   key={flag.id}

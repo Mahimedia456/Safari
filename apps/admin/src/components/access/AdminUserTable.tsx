@@ -27,7 +27,7 @@ export default function AdminUserTable({
               {[
                 "User",
                 "Role",
-                "Region Scope",
+                "Market Scope",
                 "Status",
                 "Last Login",
                 "",

@@ -37,35 +37,35 @@ const demoAccounts: DemoAccount[] = [
     label: "Super Admin",
     description: "Complete platform access",
     email: "admin@safari.com",
-    password: "12345678",
+    password: "safarimobile",
     type: "admin",
   },
   {
     label: "Food Merchant",
     description: "Restaurant / food store",
     email: "food@safari.com",
-    password: "12345678",
+    password: "safarimobile",
     type: "merchant",
   },
   {
     label: "Grocery Merchant",
     description: "Grocery store",
     email: "grocery@safari.com",
-    password: "12345678",
+    password: "safarimobile",
     type: "merchant",
   },
   {
     label: "Pharmacy Merchant",
     description: "Pharmacy store",
     email: "pharmacy@safari.com",
-    password: "12345678",
+    password: "safarimobile",
     type: "merchant",
   },
   {
     label: "Services Merchant",
     description: "Service business",
     email: "services@safari.com",
-    password: "12345678",
+    password: "safarimobile",
     type: "merchant",
   },
 ];
@@ -114,7 +114,7 @@ export default function LoginPage() {
     );
   }
 
-  const handleSubmit = (
+  const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
@@ -139,7 +139,7 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
 
-    const result = login({
+    const result = await login({
       email,
       password,
     });

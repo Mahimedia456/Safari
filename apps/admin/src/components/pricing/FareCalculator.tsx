@@ -12,7 +12,7 @@ import {
 } from "../../store/pricingStore";
 
 import type {
-  PricingRegion,
+  PricingMarket,
   PricingRideType,
 } from "../../types/pricing";
 
@@ -25,9 +25,9 @@ export default function FareCalculator() {
 
   const [
     region,
-    setRegion,
+    setMarket,
   ] =
-    useState<PricingRegion>(
+    useState<PricingMarket>(
       "Pakistan",
     );
 
@@ -83,8 +83,8 @@ export default function FareCalculator() {
 
   const symbol =
     result?.currency ===
-    "EUR"
-      ? "€"
+    "PKR"
+      ? "Rs "
       : "Rs ";
 
   return (
@@ -101,7 +101,7 @@ export default function FareCalculator() {
         <div className="mt-6 space-y-4">
           <label>
             <span className="text-xs font-semibold text-slate-500">
-              Region
+              Market
             </span>
 
             <select
@@ -109,19 +109,15 @@ export default function FareCalculator() {
               onChange={(
                 event,
               ) =>
-                setRegion(
+                setMarket(
                   event.target
-                    .value as PricingRegion,
+                    .value as PricingMarket,
                 )
               }
               className="safari-input mt-2"
             >
               <option value="Pakistan">
                 Pakistan
-              </option>
-
-              <option value="Germany">
-                Germany
               </option>
             </select>
           </label>

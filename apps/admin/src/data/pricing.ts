@@ -132,9 +132,9 @@ export const initialRidePricing: RidePricingRule[] =
     {
       id: "PRICE-DE-ECONOMY",
 
-      region: "Germany",
+      region: "Pakistan",
 
-      currency: "EUR",
+      currency: "PKR",
 
       rideType:
         "economy",
@@ -163,9 +163,9 @@ export const initialRidePricing: RidePricingRule[] =
     {
       id: "PRICE-DE-COMFORT",
 
-      region: "Germany",
+      region: "Pakistan",
 
-      currency: "EUR",
+      currency: "PKR",
 
       rideType:
         "comfort",
@@ -194,9 +194,9 @@ export const initialRidePricing: RidePricingRule[] =
     {
       id: "PRICE-DE-PREMIUM",
 
-      region: "Germany",
+      region: "Pakistan",
 
-      currency: "EUR",
+      currency: "PKR",
 
       rideType:
         "premium",
@@ -244,7 +244,7 @@ export const initialSurgeSettings: SurgeSettings[] =
     },
 
     {
-      region: "Germany",
+      region: "Pakistan",
 
       enabled: true,
 
@@ -281,7 +281,7 @@ export const initialDriverCommission: DriverCommissionSettings[] =
     },
 
     {
-      region: "Germany",
+      region: "Pakistan",
 
       standardCommissionPercent: 20,
 

@@ -44,7 +44,7 @@ export default function ServiceCategoryTable({
           </thead>
 
           <tbody>
-            {categories.map(
+            {(categories ?? []).map(
               (category) => (
                 <tr
                   key={

@@ -33,13 +33,6 @@ export default function PricingStats({
         "Pakistan",
     );
 
-  const germany =
-    commission.find(
-      (item) =>
-        item.region ===
-        "Germany",
-    );
-
   const stats = [
     {
       label:
@@ -63,10 +56,10 @@ export default function PricingStats({
 
     {
       label:
-        "DE Driver Commission",
+        "Pakistan Driver Commission",
 
       value:
-        `${germany?.standardCommissionPercent ?? 0}%`,
+        `${pakistan?.standardCommissionPercent ?? 0}%`,
 
       icon:
         BadgePercent,
@@ -95,7 +88,7 @@ export default function PricingStats({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map(
         (stat) => {
           const Icon =

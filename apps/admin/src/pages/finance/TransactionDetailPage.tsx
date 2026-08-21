@@ -40,8 +40,8 @@ export default function TransactionDetailPage() {
 
   const symbol =
     transaction.currency ===
-    "EUR"
-      ? "€"
+    "PKR"
+      ? "Rs "
       : "Rs ";
 
   return (
@@ -94,7 +94,7 @@ export default function TransactionDetailPage() {
             />
 
             <Item
-              label="Region"
+              label="Market"
               value={
                 transaction.region
               }

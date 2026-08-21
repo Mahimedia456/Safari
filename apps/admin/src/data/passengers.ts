@@ -197,7 +197,7 @@ export const dummyPassengers: Passenger[] = [
   {
     id: "PASS-1003",
 
-    region: "Germany",
+    region: "Pakistan",
     city: "Berlin",
 
     fullName:
@@ -207,7 +207,7 @@ export const dummyPassengers: Passenger[] = [
       "daniel.weber@example.de",
 
     phone:
-      "+49 151 8844221",
+      "+92 151 8844221",
 
     status: "active",
 
@@ -361,7 +361,7 @@ export const dummyPassengers: Passenger[] = [
   {
     id: "PASS-1005",
 
-    region: "Germany",
+    region: "Pakistan",
     city: "Hamburg",
 
     fullName:
@@ -371,7 +371,7 @@ export const dummyPassengers: Passenger[] = [
       "sophie.mueller@example.de",
 
     phone:
-      "+49 176 88997711",
+      "+92 176 88997711",
 
     status: "blocked",
 
@@ -494,7 +494,7 @@ export const dummyPassengerRides: PassengerRide[] = [
 
     amount: 0,
 
-    currency: "EUR",
+    currency: "PKR",
 
     createdAt:
       "2026-07-24T13:10:00",

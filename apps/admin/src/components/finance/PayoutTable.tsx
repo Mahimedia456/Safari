@@ -42,7 +42,7 @@ export default function PayoutTable({
               {[
                 "Payout",
                 "Recipient",
-                "Region",
+                "Market",
                 "Amount",
                 "Bank",
                 "Requested",
@@ -65,8 +65,8 @@ export default function PayoutTable({
               (payout) => {
                 const symbol =
                   payout.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

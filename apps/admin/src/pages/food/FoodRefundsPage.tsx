@@ -76,7 +76,7 @@ export default function FoodRefundsPage() {
             </thead>
 
             <tbody>
-              {refunds.map(
+              {(refunds ?? []).map(
                 (refund) => (
                   <tr
                     key={

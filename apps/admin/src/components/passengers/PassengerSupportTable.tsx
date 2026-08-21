@@ -58,7 +58,7 @@ export default function PassengerSupportTable({
           </thead>
 
           <tbody>
-            {cases.map(
+            {(cases ?? []).map(
               (supportCase) => (
                 <tr
                   key={

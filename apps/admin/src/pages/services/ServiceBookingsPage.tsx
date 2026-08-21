@@ -31,7 +31,7 @@ export default function ServiceBookingsPage() {
           .trim()
           .toLowerCase();
 
-      return bookings.filter(
+      return (bookings ?? []).filter(
         (booking) => {
           const matchesSearch =
             !query ||

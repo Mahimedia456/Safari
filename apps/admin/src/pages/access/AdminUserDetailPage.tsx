@@ -80,10 +80,10 @@ export default function AdminUserDetailPage() {
         state.updateAdminUserStatus,
     );
 
-  const updateRegion =
+  const updateMarket =
     useAccessStore(
       (state) =>
-        state.updateRegionScope,
+        state.updateMarketScope,
     );
 
   if (!adminUser) {
@@ -173,7 +173,7 @@ export default function AdminUserDetailPage() {
 
             <Info
               icon={MapPin}
-              label="Region Scope"
+              label="Market Scope"
               value={
                 adminUser.regionScope
               }
@@ -245,7 +245,7 @@ export default function AdminUserDetailPage() {
 
             <label>
               <span className="text-xs font-semibold text-slate-500">
-                Region Scope
+                Market Scope
               </span>
 
               <select
@@ -257,28 +257,24 @@ export default function AdminUserDetailPage() {
                   protectedSuperAdmin
                 }
                 onChange={(event) =>
-                  updateRegion(
+                  updateMarket(
                     adminUser.id,
 
                     event.target
                       .value as
                       | "all"
                       | "Pakistan"
-                      | "Germany",
+                      | "Pakistan",
                   )
                 }
                 className="safari-input mt-2"
               >
                 <option value="all">
-                  All Regions
+                  Pakistan
                 </option>
 
                 <option value="Pakistan">
                   Pakistan
-                </option>
-
-                <option value="Germany">
-                  Germany
                 </option>
               </select>
             </label>

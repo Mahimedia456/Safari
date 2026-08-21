@@ -20,10 +20,10 @@ export default function PassengerSafetyPage() {
     );
 
   const flags =
-    usePassengerStore(
+    (usePassengerStore(
       (state) =>
         state.flags,
-    );
+    ) ?? []);
 
   if (!user) {
     return null;

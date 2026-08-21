@@ -279,7 +279,7 @@ export const dummyDrivers: Driver[] = [
   {
     id: "DRV-1003",
 
-    region: "Germany",
+    region: "Pakistan",
     city: "Berlin",
 
     fullName:
@@ -289,7 +289,7 @@ export const dummyDrivers: Driver[] = [
       "jonas.driver@safari.com",
 
     phone:
-      "+49 151 11882211",
+      "+92 151 11882211",
 
     status: "active",
 
@@ -566,9 +566,9 @@ export const dummyDriverApplications: DriverApplication[] = [
       "lukas.schneider@example.de",
 
     phone:
-      "+49 151 99001122",
+      "+92 151 99001122",
 
-    region: "Germany",
+    region: "Pakistan",
 
     city: "Hamburg",
 

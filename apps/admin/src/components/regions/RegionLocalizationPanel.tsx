@@ -1,21 +1,21 @@
 import {
-  useRegionStore,
+  useMarketStore,
 } from "../../store/regionStore";
 
 import type {
-  SafariRegion,
+  SafariMarket,
 } from "../../types/region";
 
 export default function RegionLocalizationPanel({
   region,
   canEdit,
 }: {
-  region: SafariRegion;
+  region: SafariMarket;
 
   canEdit: boolean;
 }) {
   const update =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.updateLocalization,
     );

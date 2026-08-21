@@ -15,8 +15,8 @@ export default function PassengerWalletPanel({
 }) {
   const symbol =
     passenger.region ===
-    "Germany"
-      ? "€"
+    "Pakistan"
+      ? "Rs "
       : "Rs ";
 
   const wallet =

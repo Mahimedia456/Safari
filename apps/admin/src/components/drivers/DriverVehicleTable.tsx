@@ -47,7 +47,7 @@ export default function DriverVehicleTable({
           </thead>
 
           <tbody>
-            {vehicles.map(
+            {(vehicles ?? []).map(
               (vehicle) => (
                 <tr
                   key={

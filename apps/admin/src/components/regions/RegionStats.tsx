@@ -6,13 +6,13 @@ import {
 } from "lucide-react";
 
 import type {
-  SafariRegion,
+  SafariMarket,
 } from "../../types/region";
 
 export default function RegionStats({
   regions,
 }: {
-  regions: SafariRegion[];
+  regions: SafariMarket[];
 }) {
   const active =
     regions.filter(
@@ -25,7 +25,7 @@ export default function RegionStats({
     regions.reduce(
       (count, region) =>
         count +
-        region.services.filter(
+        (region.services ?? []).filter(
           (item) =>
             item.enabled,
         ).length,
@@ -36,7 +36,7 @@ export default function RegionStats({
     regions.reduce(
       (count, region) =>
         count +
-        region.rides.filter(
+        (region.rides ?? []).filter(
           (item) =>
             item.enabled,
         ).length,
@@ -53,7 +53,7 @@ export default function RegionStats({
 
   const stats = [
     {
-      label: "Regions",
+      label: "Markets",
       value: regions.length,
       icon: Globe2,
     },

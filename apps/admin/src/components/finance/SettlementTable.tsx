@@ -30,7 +30,7 @@ export default function SettlementTable({
               {[
                 "Settlement",
                 "Period",
-                "Region",
+                "Market",
                 "Partner Type",
                 "Gross",
                 "Commission",
@@ -55,8 +55,8 @@ export default function SettlementTable({
               (settlement) => {
                 const symbol =
                   settlement.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

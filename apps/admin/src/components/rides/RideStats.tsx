@@ -18,7 +18,7 @@ export default function RideStats({
   rides,
 }: Props) {
   const active =
-    rides.filter(
+    (rides ?? []).filter(
       (ride) =>
         ![
           "completed",
@@ -28,22 +28,24 @@ export default function RideStats({
     ).length;
 
   const completed =
-    rides.filter(
+    (rides ?? []).filter(
       (ride) =>
         ride.status ===
         "completed",
     ).length;
 
   const scheduled =
-    rides.filter(
+    (rides ?? []).filter(
       (ride) =>
         ride.scheduled &&
         ride.status !==
           "cancelled",
     ).length;
 
+  const safeRides = rides ?? [];
+
   const pakistanRevenue =
-    rides
+    safeRides
       .filter(
         (ride) =>
           ride.region ===
@@ -59,27 +61,10 @@ export default function RideStats({
         0,
       );
 
-  const germanyRevenue =
-    rides
-      .filter(
-        (ride) =>
-          ride.region ===
-            "Germany" &&
-          ride.status ===
-            "completed",
-      )
-      .reduce(
-        (sum, ride) =>
-          sum +
-          (ride.finalFare ??
-            ride.estimatedFare),
-        0,
-      );
-
   const stats = [
     {
       label: "Total Rides",
-      value: rides.length,
+      value: safeRides.length,
       icon: Route,
     },
     {
@@ -100,9 +85,7 @@ export default function RideStats({
     {
       label: "Revenue",
       value:
-        germanyRevenue > 0
-          ? `Rs ${pakistanRevenue.toLocaleString()} · €${germanyRevenue.toLocaleString()}`
-          : `Rs ${pakistanRevenue.toLocaleString()}`,
+        `Rs ${pakistanRevenue.toLocaleString()}`,
       icon: CircleDollarSign,
     },
   ];

@@ -45,7 +45,7 @@ export default function DriverCommissionPage() {
         />
 
         <DriverCommissionPanel
-          region="Germany"
+          region="Pakistan"
           canEdit={
             permissions.editCommission
           }

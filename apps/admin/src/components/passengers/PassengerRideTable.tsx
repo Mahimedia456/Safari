@@ -44,7 +44,7 @@ export default function PassengerRideTable({
           </thead>
 
           <tbody>
-            {rides.map(
+            {(rides ?? []).map(
               (ride) => (
                 <tr
                   key={ride.id}
@@ -73,8 +73,8 @@ export default function PassengerRideTable({
 
                   <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-800 dark:text-slate-200">
                     {ride.currency ===
-                    "EUR"
-                      ? "€"
+                    "PKR"
+                      ? "Rs "
                       : "Rs "}
                     {ride.amount.toLocaleString()}
                   </td>

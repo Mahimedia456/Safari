@@ -1,18 +1,41 @@
 import { create } from "zustand";
 
+import { apiRequest } from "../services/apiClient";
 import type {
+  AccountRole,
   AdminUser,
   LoginInput,
   MerchantStoreType,
   RegisterInput,
-  StoredAdminUser,
 } from "../types/auth";
 
-const USERS_KEY =
-  "safari-admin-users";
+const SESSION_KEY = "safari-admin-session-v3";
 
-const SESSION_KEY =
-  "safari-admin-session";
+type ApiProfile = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  account_type: "administration" | "merchant";
+  admin_role: string | null;
+  merchant_type: string | null;
+  status: "pending" | "active" | "suspended" | "blocked";
+};
+
+type SessionPayload = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  expiresAt?: number | null;
+  profile: ApiProfile;
+};
+
+type StoredSession = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  expiresAt?: number | null;
+  user: AdminUser;
+};
 
 interface AuthResult {
   success: boolean;
@@ -21,481 +44,288 @@ interface AuthResult {
 
 interface AuthState {
   user: AdminUser | null;
-
+  accessToken: string | null;
+  refreshToken: string | null;
   initialized: boolean;
 
-  initializeAuth: () => void;
-
-  login: (
-    input: LoginInput,
-  ) => AuthResult;
-
-  register: (
-    input: RegisterInput,
-  ) => AuthResult;
-
-  logout: () => void;
+  initializeAuth: () => Promise<void>;
+  login: (input: LoginInput) => Promise<AuthResult>;
+  register: (input: RegisterInput) => Promise<AuthResult>;
+  refresh: () => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
-const DEMO_USERS: StoredAdminUser[] =
-  [
-    {
-      id: "demo-super-admin",
-
-      fullName:
-        "Safari Super Admin",
-
-      email:
-        "admin@safari.com",
-
-      password:
-        "12345678",
-
-      accountType:
-        "administration",
-
-      role:
-        "super_admin",
-    },
-
-    {
-      id:
-        "demo-food-merchant",
-
-      fullName:
-        "Food Merchant Demo",
-
-      email:
-        "food@safari.com",
-
-      password:
-        "12345678",
-
-      accountType:
-        "merchant",
-
-      role:
-        "food_merchant",
-
-      storeType: "food",
-    },
-
-    {
-      id:
-        "demo-grocery-merchant",
-
-      fullName:
-        "Grocery Merchant Demo",
-
-      email:
-        "grocery@safari.com",
-
-      password:
-        "12345678",
-
-      accountType:
-        "merchant",
-
-      role:
-        "grocery_merchant",
-
-      storeType: "grocery",
-    },
-
-    {
-      id:
-        "demo-pharmacy-merchant",
-
-      fullName:
-        "Pharmacy Merchant Demo",
-
-      email:
-        "pharmacy@safari.com",
-
-      password:
-        "12345678",
-
-      accountType:
-        "merchant",
-
-      role:
-        "pharmacy_merchant",
-
-      storeType:
-        "pharmacy",
-    },
-
-    {
-      id:
-        "demo-services-merchant",
-
-      fullName:
-        "Services Merchant Demo",
-
-      email:
-        "services@safari.com",
-
-      password:
-        "12345678",
-
-      accountType:
-        "merchant",
-
-      role:
-        "services_merchant",
-
-      storeType:
-        "services",
-    },
-  ];
-
-function normalizeEmail(
-  value: string,
-) {
-  return value
-    .trim()
-    .toLowerCase();
-}
-
-function readUsers(): StoredAdminUser[] {
-  try {
-    const raw =
-      localStorage.getItem(
-        USERS_KEY,
-      );
-
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown =
-      JSON.parse(raw);
-
-    if (
-      !Array.isArray(parsed)
-    ) {
-      return [];
-    }
-
-    return parsed as StoredAdminUser[];
-  } catch {
-    return [];
+function roleFromProfile(profile: ApiProfile): AccountRole {
+  if (profile.account_type === "administration") {
+    return (profile.admin_role ?? "admin") as AccountRole;
   }
+
+  return `${profile.merchant_type ?? "food"}_merchant` as AccountRole;
 }
 
-function saveUsers(
-  users: StoredAdminUser[],
-) {
-  localStorage.setItem(
-    USERS_KEY,
-    JSON.stringify(users),
-  );
-}
-
-function seedDemoUsers() {
-  const users =
-    readUsers();
-
-  const merged = [
-    ...users,
-  ];
-
-  DEMO_USERS.forEach(
-    (demoUser) => {
-      const index =
-        merged.findIndex(
-          (item) =>
-            normalizeEmail(
-              item.email,
-            ) ===
-            normalizeEmail(
-              demoUser.email,
-            ),
-        );
-
-      /*
-       * Keep demo accounts consistent
-       * while allowing normal registered
-       * accounts to remain untouched.
-       */
-      if (index >= 0) {
-        merged[index] =
-          demoUser;
-      } else {
-        merged.push(
-          demoUser,
-        );
-      }
-    },
-  );
-
-  saveUsers(merged);
-}
-
-function resolveStoreType(
-  role: RegisterInput["role"],
-): MerchantStoreType | undefined {
-  switch (role) {
-    case "food_merchant":
-      return "food";
-
-    case "grocery_merchant":
-      return "grocery";
-
-    case "pharmacy_merchant":
-      return "pharmacy";
-
-    case "services_merchant":
-      return "services";
-
-    default:
-      return undefined;
-  }
-}
-
-function publicUser(
-  user: StoredAdminUser,
-): AdminUser {
+function publicUser(profile: ApiProfile): AdminUser {
   return {
-    id: user.id,
-
-    fullName:
-      user.fullName,
-
-    email:
-      user.email,
-
-    accountType:
-      user.accountType,
-
-    role:
-      user.role,
-
+    id: profile.id,
+    fullName: profile.full_name ?? "Safari User",
+    email: profile.email ?? "",
+    accountType: profile.account_type,
+    role: roleFromProfile(profile),
     storeType:
-      user.storeType,
+      profile.account_type === "merchant"
+        ? (profile.merchant_type as MerchantStoreType)
+        : undefined,
+    status: profile.status,
   };
 }
 
-export const useAuthStore =
-  create<AuthState>(
-    (set) => ({
-      user: null,
+function saveSession(payload: StoredSession) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+}
 
-      initialized: false,
+function clearStoredSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
 
-      initializeAuth: () => {
-        seedDemoUsers();
+function readSession(): StoredSession | null {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as StoredSession) : null;
+  } catch {
+    clearStoredSession();
+    return null;
+  }
+}
 
-        try {
-          const raw =
-            localStorage.getItem(
-              SESSION_KEY,
-            );
+function storePayload(data: SessionPayload): StoredSession {
+  return {
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
+    expiresIn: data.expiresIn,
+    expiresAt: data.expiresAt ?? null,
+    user: publicUser(data.profile),
+  };
+}
 
-          if (!raw) {
-            set({
-              user: null,
-              initialized: true,
-            });
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  accessToken: null,
+  refreshToken: null,
+  initialized: false,
 
-            return;
-          }
+  initializeAuth: async () => {
+    const stored = readSession();
 
-          const parsed: unknown =
-            JSON.parse(raw);
+    if (!stored) {
+      set({ initialized: true });
+      return;
+    }
 
-          if (
-            !parsed ||
-            typeof parsed !==
-              "object"
-          ) {
-            throw new Error(
-              "Invalid session.",
-            );
-          }
+    set({
+      user: stored.user,
+      accessToken: stored.accessToken,
+      refreshToken: stored.refreshToken,
+    });
 
-          set({
-            user:
-              parsed as AdminUser,
+    try {
+      const data = await apiRequest<{
+        profile: ApiProfile;
+      }>(
+        "/auth/me",
+        {},
+        stored.accessToken,
+      );
 
-            initialized: true,
-          });
-        } catch {
-          localStorage.removeItem(
-            SESSION_KEY,
-          );
+      const user = publicUser(data.profile);
 
-          set({
-            user: null,
-            initialized: true,
-          });
-        }
-      },
+      if (["suspended", "blocked"].includes(user.status)) {
+        throw new Error("Safari Control Center access is unavailable.");
+      }
 
-      login: ({
-        email,
-        password,
-      }) => {
-        const users =
-          readUsers();
+      saveSession({
+        ...stored,
+        user,
+      });
 
-        const found =
-          users.find(
-            (item) =>
-              normalizeEmail(
-                item.email,
-              ) ===
-              normalizeEmail(
-                email,
-              ),
-          );
+      set({
+        user,
+        initialized: true,
+      });
+    } catch {
+      const refreshed = await get().refresh();
 
-        if (!found) {
-          return {
-            success: false,
-
-            message:
-              "No Safari account was found with this email.",
-          };
-        }
-
-        if (
-          found.password !==
-          password
-        ) {
-          return {
-            success: false,
-
-            message:
-              "The password you entered is incorrect.",
-          };
-        }
-
-        const sessionUser =
-          publicUser(found);
-
-        localStorage.setItem(
-          SESSION_KEY,
-          JSON.stringify(
-            sessionUser,
-          ),
-        );
-
-        set({
-          user:
-            sessionUser,
-        });
-
-        return {
-          success: true,
-
-          message:
-            "Signed in successfully.",
-        };
-      },
-
-      register: ({
-        fullName,
-        email,
-        password,
-        accountType,
-        role,
-        storeType,
-      }) => {
-        const users =
-          readUsers();
-
-        const normalizedEmail =
-          normalizeEmail(
-            email,
-          );
-
-        const exists =
-          users.some(
-            (item) =>
-              normalizeEmail(
-                item.email,
-              ) ===
-              normalizedEmail,
-          );
-
-        if (exists) {
-          return {
-            success: false,
-
-            message:
-              "An account already exists with this email.",
-          };
-        }
-
-        const resolvedStoreType =
-          accountType ===
-          "merchant"
-            ? storeType ??
-              resolveStoreType(
-                role,
-              )
-            : undefined;
-
-        const newUser: StoredAdminUser =
-          {
-            id:
-              crypto.randomUUID(),
-
-            fullName:
-              fullName.trim(),
-
-            email:
-              normalizedEmail,
-
-            password,
-
-            accountType,
-
-            role,
-
-            storeType:
-              resolvedStoreType,
-          };
-
-        saveUsers([
-          ...users,
-          newUser,
-        ]);
-
-        const sessionUser =
-          publicUser(
-            newUser,
-          );
-
-        localStorage.setItem(
-          SESSION_KEY,
-          JSON.stringify(
-            sessionUser,
-          ),
-        );
-
-        set({
-          user:
-            sessionUser,
-        });
-
-        return {
-          success: true,
-
-          message:
-            "Safari account created successfully.",
-        };
-      },
-
-      logout: () => {
-        localStorage.removeItem(
-          SESSION_KEY,
-        );
+      if (!refreshed) {
+        clearStoredSession();
 
         set({
           user: null,
+          accessToken: null,
+          refreshToken: null,
+          initialized: true,
         });
-      },
-    }),
-  );
+      } else {
+        set({ initialized: true });
+      }
+    }
+  },
+
+  login: async ({ email, password }) => {
+    try {
+      const data = await apiRequest<SessionPayload>(
+        "/auth/admin/login",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            password,
+          }),
+        },
+      );
+
+      const stored = storePayload(data);
+
+      saveSession(stored);
+
+      set({
+        user: stored.user,
+        accessToken: stored.accessToken,
+        refreshToken: stored.refreshToken,
+      });
+
+      return {
+        success: true,
+        message: "Signed in successfully.",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not sign in to Safari Control Center.",
+      };
+    }
+  },
+
+  register: async ({
+    fullName,
+    email,
+    password,
+    accountType,
+    role,
+  }) => {
+    if (accountType !== "merchant") {
+      return {
+        success: false,
+        message:
+          "Administration accounts are created by an existing Safari super admin.",
+      };
+    }
+
+    try {
+      const data = await apiRequest<{
+        emailConfirmationRequired: boolean;
+        session: SessionPayload | null;
+        profile: ApiProfile | null;
+      }>(
+        "/auth/admin/register-merchant",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            fullName,
+            email: email.trim().toLowerCase(),
+            password,
+            role,
+          }),
+        },
+      );
+
+      if (!data.session || !data.profile) {
+        return {
+          success: true,
+          message:
+            "Merchant account created. Complete email confirmation before signing in.",
+        };
+      }
+
+      const stored = storePayload({
+        ...data.session,
+        profile: data.profile,
+      });
+
+      saveSession(stored);
+
+      set({
+        user: stored.user,
+        accessToken: stored.accessToken,
+        refreshToken: stored.refreshToken,
+      });
+
+      return {
+        success: true,
+        message: "Safari merchant account created successfully.",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not create the Safari merchant account.",
+      };
+    }
+  },
+
+  refresh: async () => {
+    const refreshToken = get().refreshToken;
+
+    if (!refreshToken) return false;
+
+    try {
+      const data = await apiRequest<SessionPayload>(
+        "/auth/refresh",
+        {
+          method: "POST",
+          body: JSON.stringify({ refreshToken }),
+        },
+      );
+
+      const stored = storePayload(data);
+
+      saveSession(stored);
+
+      set({
+        user: stored.user,
+        accessToken: stored.accessToken,
+        refreshToken: stored.refreshToken,
+      });
+
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  logout: async () => {
+    const accessToken = get().accessToken;
+
+    if (accessToken) {
+      try {
+        await apiRequest<{ message: string }>(
+          "/auth/logout",
+          { method: "POST" },
+          accessToken,
+        );
+      } catch {
+        // Browser session is cleared below even when the backend is offline.
+      }
+    }
+
+    clearStoredSession();
+
+    set({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+    });
+  },
+}));

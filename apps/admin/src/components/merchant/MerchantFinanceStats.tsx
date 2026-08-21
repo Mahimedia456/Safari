@@ -68,8 +68,8 @@ export default function MerchantFinanceStats({
     "PKR";
 
   const symbol =
-    currency === "EUR"
-      ? "€"
+    currency === "PKR"
+      ? "Rs "
       : "Rs ";
 
   const cards = [

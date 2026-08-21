@@ -28,7 +28,7 @@ export default function DriverTable({
             <tr>
               {[
                 "Driver",
-                "Region",
+                "Market",
                 "Status",
                 "Verification",
                 "Online",
@@ -49,7 +49,7 @@ export default function DriverTable({
           </thead>
 
           <tbody>
-            {drivers.map(
+            {(drivers ?? []).map(
               (driver) => (
                 <tr
                   key={

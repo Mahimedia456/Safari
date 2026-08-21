@@ -48,7 +48,7 @@ export default function FinanceStats({
       .filter(
         (item) =>
           item.region ===
-            "Germany" &&
+            "Pakistan" &&
           item.status ===
             "completed",
       )
@@ -98,10 +98,10 @@ export default function FinanceStats({
 
     {
       label:
-        "Germany Volume",
+        "Pakistan Volume",
 
       value:
-        `€${deVolume.toLocaleString()}`,
+        `Rs ${deVolume.toLocaleString()}`,
 
       icon:
         CircleDollarSign,

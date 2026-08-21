@@ -3,72 +3,72 @@ import {
 } from "zustand";
 
 import {
-  dummyRegions,
+  dummyMarkets,
 } from "../data/regions";
 
 import type {
-  RegionLocalization,
-  RegionOperations,
-  RegionRideType,
-  RegionServiceType,
-  RegionStatus,
-  RegionSupport,
-  SafariRegion,
+  MarketLocalization,
+  MarketOperations,
+  MarketRideType,
+  MarketServiceType,
+  MarketStatus,
+  MarketSupport,
+  SafariMarket,
 } from "../types/region";
 
-interface RegionState {
-  regions: SafariRegion[];
+interface MarketState {
+  regions: SafariMarket[];
 
-  setRegionStatus: (
+  setMarketStatus: (
     regionId: string,
-    status: RegionStatus,
+    status: MarketStatus,
   ) => void;
 
   toggleService: (
     regionId: string,
-    service: RegionServiceType,
+    service: MarketServiceType,
   ) => void;
 
   toggleServiceMerchantRegistration: (
     regionId: string,
-    service: RegionServiceType,
+    service: MarketServiceType,
   ) => void;
 
   toggleRideType: (
     regionId: string,
-    rideType: RegionRideType,
+    rideType: MarketRideType,
   ) => void;
 
   toggleRideDriverRegistration: (
     regionId: string,
-    rideType: RegionRideType,
+    rideType: MarketRideType,
   ) => void;
 
   updateLocalization: (
     regionId: string,
     changes:
-      Partial<RegionLocalization>,
+      Partial<MarketLocalization>,
   ) => void;
 
   updateSupport: (
     regionId: string,
     changes:
-      Partial<RegionSupport>,
+      Partial<MarketSupport>,
   ) => void;
 
   updateOperations: (
     regionId: string,
     changes:
-      Partial<RegionOperations>,
+      Partial<MarketOperations>,
   ) => void;
 }
 
-export const useRegionStore =
-  create<RegionState>(
+export const useMarketStore =
+  create<MarketState>(
     (set) => ({
-      regions: dummyRegions,
+      regions: dummyMarkets,
 
-      setRegionStatus: (
+      setMarketStatus: (
         regionId,
         status,
       ) => {

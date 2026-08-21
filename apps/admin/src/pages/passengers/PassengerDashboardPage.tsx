@@ -11,19 +11,19 @@ import {
 
 export default function PassengerDashboardPage() {
   const passengers =
-    usePassengerStore(
+    (usePassengerStore(
       (state) =>
         state.passengers,
-    );
+    ) ?? []);
 
   const flags =
-    usePassengerStore(
+    (usePassengerStore(
       (state) =>
         state.flags,
-    );
+    ) ?? []);
 
   const openFlags =
-    flags.filter(
+    (flags ?? []).filter(
       (flag) =>
         flag.status !==
         "resolved",

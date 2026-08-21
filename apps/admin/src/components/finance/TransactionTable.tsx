@@ -48,12 +48,12 @@ export default function TransactionTable({
           </thead>
 
           <tbody>
-            {transactions.map(
+            {(transactions ?? []).map(
               (transaction) => {
                 const symbol =
                   transaction.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

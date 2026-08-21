@@ -1,10 +1,10 @@
-export type PricingRegion =
+export type PricingMarket =
   | "Pakistan"
-  | "Germany";
+  | "Pakistan";
 
 export type PricingCurrency =
   | "PKR"
-  | "EUR";
+  | "PKR";
 
 export type PricingRideType =
   | "bike"
@@ -15,7 +15,7 @@ export type PricingRideType =
 export interface RidePricingRule {
   id: string;
 
-  region: PricingRegion;
+  region: PricingMarket;
 
   currency:
     PricingCurrency;
@@ -45,7 +45,7 @@ export interface RidePricingRule {
 }
 
 export interface SurgeSettings {
-  region: PricingRegion;
+  region: PricingMarket;
 
   enabled: boolean;
 
@@ -63,7 +63,7 @@ export interface SurgeSettings {
 }
 
 export interface DriverCommissionSettings {
-  region: PricingRegion;
+  region: PricingMarket;
 
   standardCommissionPercent: number;
 
@@ -79,7 +79,7 @@ export interface DriverCommissionSettings {
 }
 
 export interface FareCalculationInput {
-  region: PricingRegion;
+  region: PricingMarket;
 
   rideType:
     PricingRideType;

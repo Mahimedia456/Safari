@@ -28,7 +28,7 @@ export default function PassengerTable({
             <tr>
               {[
                 "Passenger",
-                "Region",
+                "Market",
                 "Status",
                 "Verification",
                 "Rides",
@@ -49,12 +49,12 @@ export default function PassengerTable({
           </thead>
 
           <tbody>
-            {passengers.map(
+            {(passengers ?? []).map(
               (passenger) => {
                 const symbol =
                   passenger.region ===
-                  "Germany"
-                    ? "€"
+                  "Pakistan"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

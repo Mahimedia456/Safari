@@ -1,27 +1,27 @@
 import {
-  useRegionStore,
+  useMarketStore,
 } from "../../store/regionStore";
 
 import type {
-  SafariRegion,
+  SafariMarket,
 } from "../../types/region";
 
 export default function RegionServiceMatrix({
   region,
   canEdit,
 }: {
-  region: SafariRegion;
+  region: SafariMarket;
 
   canEdit: boolean;
 }) {
   const toggleService =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.toggleService,
     );
 
   const toggleRegistration =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.toggleServiceMerchantRegistration,
     );

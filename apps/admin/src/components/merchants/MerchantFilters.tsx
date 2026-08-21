@@ -49,7 +49,7 @@ export default function MerchantFilters({
         p-4
 
         md:grid-cols-2
-        xl:grid-cols-[1.6fr_1fr_1fr_1fr]
+        xl:grid-cols-[1.8fr_1fr_1fr]
       "
     >
       <div className="relative">
@@ -159,36 +159,6 @@ export default function MerchantFilters({
 
         <option value="services">
           Services
-        </option>
-      </select>
-
-      <select
-        className="safari-input"
-        value={
-          filters.country
-        }
-        onChange={(
-          event,
-        ) =>
-          onChange({
-            ...filters,
-
-            country:
-              event.target
-                .value,
-          })
-        }
-      >
-        <option value="all">
-          All countries
-        </option>
-
-        <option value="Pakistan">
-          Pakistan
-        </option>
-
-        <option value="Germany">
-          Germany
         </option>
       </select>
     </div>

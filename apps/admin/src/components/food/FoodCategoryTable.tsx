@@ -47,7 +47,7 @@ export default function FoodCategoryTable({
         </thead>
 
         <tbody>
-          {categories.map(
+          {(categories ?? []).map(
             (category) => (
               <tr
                 key={

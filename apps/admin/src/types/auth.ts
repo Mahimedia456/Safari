@@ -11,13 +11,9 @@ export type MerchantRole =
   | "pharmacy_merchant"
   | "services_merchant";
 
-export type AccountRole =
-  | AdminRole
-  | MerchantRole;
+export type AccountRole = AdminRole | MerchantRole;
 
-export type AccountType =
-  | "administration"
-  | "merchant";
+export type AccountType = "administration" | "merchant";
 
 export type MerchantStoreType =
   | "food"
@@ -27,21 +23,12 @@ export type MerchantStoreType =
 
 export interface AdminUser {
   id: string;
-
   fullName: string;
-
   email: string;
-
   role: AccountRole;
-
   accountType: AccountType;
-
   storeType?: MerchantStoreType;
-}
-
-export interface StoredAdminUser
-  extends AdminUser {
-  password: string;
+  status: "pending" | "active" | "suspended" | "blocked";
 }
 
 export interface LoginInput {
@@ -51,14 +38,9 @@ export interface LoginInput {
 
 export interface RegisterInput {
   fullName: string;
-
   email: string;
-
   password: string;
-
   accountType: AccountType;
-
   role: AccountRole;
-
   storeType?: MerchantStoreType;
 }

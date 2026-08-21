@@ -66,7 +66,7 @@ export default function RewardAdjustmentsPage() {
               }
               className="safari-input mt-2"
             >
-              {passengers.map((passenger) => (
+              {(passengers ?? []).map((passenger) => (
                 <option
                   key={passenger.passengerId}
                   value={passenger.passengerId}

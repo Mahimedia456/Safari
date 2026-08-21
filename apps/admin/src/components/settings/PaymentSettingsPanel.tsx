@@ -32,7 +32,7 @@ export default function PaymentSettingsPanel({
         icon={WalletCards}
         eyebrow="Payments"
         title="Payment & Payout Defaults"
-        description="Global payment capabilities. Region settings can disable methods for individual countries."
+        description="Global payment capabilities. Market settings can disable methods for individual countries."
       />
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">

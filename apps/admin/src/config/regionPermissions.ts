@@ -2,10 +2,10 @@ import type {
   AccountRole,
 } from "../types/auth";
 
-export interface RegionPermissions {
+export interface MarketPermissions {
   view: boolean;
 
-  editRegionStatus: boolean;
+  editMarketStatus: boolean;
 
   editServices: boolean;
 
@@ -18,16 +18,16 @@ export interface RegionPermissions {
   editOperations: boolean;
 }
 
-export function getRegionPermissions(
+export function getMarketPermissions(
   role: AccountRole,
-): RegionPermissions {
+): MarketPermissions {
   switch (role) {
     case "super_admin":
     case "admin":
       return {
         view: true,
 
-        editRegionStatus: true,
+        editMarketStatus: true,
 
         editServices: true,
 
@@ -44,7 +44,7 @@ export function getRegionPermissions(
       return {
         view: true,
 
-        editRegionStatus: false,
+        editMarketStatus: false,
 
         editServices: true,
 
@@ -61,7 +61,7 @@ export function getRegionPermissions(
       return {
         view: true,
 
-        editRegionStatus: false,
+        editMarketStatus: false,
 
         editServices: false,
 
@@ -78,7 +78,7 @@ export function getRegionPermissions(
       return {
         view: true,
 
-        editRegionStatus: false,
+        editMarketStatus: false,
 
         editServices: false,
 
@@ -95,7 +95,7 @@ export function getRegionPermissions(
       return {
         view: false,
 
-        editRegionStatus: false,
+        editMarketStatus: false,
 
         editServices: false,
 

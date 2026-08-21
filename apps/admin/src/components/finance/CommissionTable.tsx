@@ -40,8 +40,8 @@ export default function CommissionTable({
               (record) => {
                 const symbol =
                   record.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

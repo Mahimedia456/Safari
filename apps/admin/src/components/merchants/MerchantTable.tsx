@@ -80,7 +80,7 @@ export default function MerchantTable({
           </thead>
 
           <tbody>
-            {merchants.map(
+            {(merchants ?? []).map(
               (merchant) => (
                 <tr
                   key={
@@ -124,10 +124,6 @@ export default function MerchantTable({
                     >
                       {
                         merchant.ownerName
-                      }{" "}
-                      ·{" "}
-                      {
-                        merchant.id
                       }
                     </div>
                   </td>
@@ -160,11 +156,9 @@ export default function MerchantTable({
                       />
 
                       {
-                        merchant.city
-                      }
-                      ,{" "}
-                      {
-                        merchant.country
+                        merchant.city === "Pakistan"
+                          ? "Pakistan"
+                          : `${merchant.city}, Pakistan`
                       }
                     </div>
                   </td>

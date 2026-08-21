@@ -20,30 +20,30 @@ export default function RevenueBreakdown({
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Region
+      <Market
         title="Pakistan"
         symbol="Rs "
-        transactions={transactions.filter(
+        transactions={(transactions ?? []).filter(
           (item) =>
             item.region ===
             "Pakistan",
         )}
       />
 
-      <Region
-        title="Germany"
-        symbol="€"
-        transactions={transactions.filter(
+      <Market
+        title="Pakistan"
+        symbol="Rs "
+        transactions={(transactions ?? []).filter(
           (item) =>
             item.region ===
-            "Germany",
+            "Pakistan",
         )}
       />
     </div>
   );
 }
 
-function Region({
+function Market({
   title,
   symbol,
   transactions,
@@ -65,7 +65,7 @@ function Region({
         {modules.map(
           (module) => {
             const rows =
-              transactions.filter(
+              (transactions ?? []).filter(
                 (item) =>
                   item.module ===
                     module &&

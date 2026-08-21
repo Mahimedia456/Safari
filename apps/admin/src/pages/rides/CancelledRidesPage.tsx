@@ -1,37 +1,70 @@
+import {
+  useEffect,
+  useMemo,
+} from "react";
+
 import RideTable from "../../components/rides/RideTable";
+import RideStats from "../../components/rides/RideStats";
 
-import { useRideStore } from "../../store/rideStore";
+import {
+  useRideStore,
+} from "../../store/rideStore";
 
-export default function ScheduledRidesPage() {
+export default function CancelledRidesPage() {
   const rides =
     useRideStore(
       (state) =>
-        state.rides,
+        state.rides ?? [],
     );
 
-  const scheduled =
-    rides.filter(
-      (ride) =>
-        ride.scheduled &&
-        ride.status !==
-          "cancelled",
+  const loaded =
+    useRideStore(
+      (state) =>
+        state.loaded,
+    );
+
+  const loadRides =
+    useRideStore(
+      (state) =>
+        state.loadRides,
+    );
+
+  useEffect(() => {
+    if (!loaded) {
+      void loadRides();
+    }
+  }, [
+    loaded,
+    loadRides,
+  ]);
+
+  const filtered =
+    useMemo(
+      () =>
+        rides.filter(
+          (ride) =>
+            ride.status.startsWith("cancelled"),
+        ),
+      [rides],
     );
 
   return (
     <div>
       <div className="mb-7">
         <div className="text-sm font-semibold text-safari-600 dark:text-safari-400">
-          Safari Ride
+          Safari Pakistan · Ride
         </div>
 
-        <h1 className="mt-1 text-3xl font-bold text-slate-950 dark:text-white">
-          Scheduled Rides
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+          Cancelled Rides
         </h1>
       </div>
 
-      <RideTable
-        rides={scheduled}
-      />
+      <RideStats rides={filtered} />
+
+      <div className="mt-5">
+        <RideTable rides={filtered} />
+      </div>
     </div>
   );
 }

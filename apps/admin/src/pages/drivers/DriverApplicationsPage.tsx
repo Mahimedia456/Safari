@@ -6,10 +6,10 @@ import {
 
 export default function DriverApplicationsPage() {
   const applications =
-    useDriverStore(
+    (useDriverStore(
       (state) =>
         state.applications,
-    );
+    ) ?? []);
 
   return (
     <div>

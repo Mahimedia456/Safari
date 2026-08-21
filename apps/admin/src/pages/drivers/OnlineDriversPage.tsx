@@ -12,7 +12,7 @@ export default function OnlineDriversPage() {
     );
 
   const online =
-    drivers.filter(
+    (drivers ?? []).filter(
       (driver) =>
         driver.online,
     );

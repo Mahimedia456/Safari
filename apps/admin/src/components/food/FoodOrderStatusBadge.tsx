@@ -1,50 +1,24 @@
-import type {
-  FoodOrderStatus,
-} from "../../types/food";
-
-const styles: Record<
-  FoodOrderStatus,
-  string
-> = {
-  pending:
-    "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-
-  confirmed:
-    "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
-
-  preparing:
-    "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
-
-  ready:
-    "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
-
-  picked_up:
-    "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400",
-
-  delivered:
-    "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-
-  cancelled:
-    "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+type Props = {
+  status: string;
 };
 
-export default function FoodOrderStatusBadge({
-  status,
-}: {
-  status: FoodOrderStatus;
-}) {
+export default function FoodOrderStatusBadge({ status }: Props) {
+  const normalized = status.toLowerCase();
+
+  const classes =
+    normalized === "delivered"
+      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+      : normalized.includes("cancelled")
+        ? "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300"
+        : normalized === "on_the_way" || normalized === "picked_up"
+          ? "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300"
+          : "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+
   return (
     <span
-      className={[
-        "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize",
-
-        styles[status],
-      ].join(" ")}
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold capitalize ${classes}`}
     >
-      {status.replace(
-        "_",
-        " ",
-      )}
+      {status.replaceAll("_", " ")}
     </span>
   );
 }

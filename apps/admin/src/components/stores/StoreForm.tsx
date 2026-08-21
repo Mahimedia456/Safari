@@ -341,7 +341,7 @@ export default function StoreForm({
                 )
               }
             >
-              {merchants.map(
+              {(merchants ?? []).map(
                 (merchant) => (
                   <option
                     key={
@@ -463,10 +463,6 @@ export default function StoreForm({
             >
               <option value="Pakistan">
                 Pakistan
-              </option>
-
-              <option value="Germany">
-                Germany
               </option>
             </select>
           </Field>

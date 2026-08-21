@@ -50,7 +50,7 @@ export default function PharmacyCategoryTable({
         </thead>
 
         <tbody>
-          {categories.map(
+          {(categories ?? []).map(
             (category) => (
               <tr
                 key={

@@ -1,243 +1,377 @@
-import {
-  create,
-} from "zustand";
+import { create } from "zustand";
 
 import {
-  dummyAvailableDrivers,
-  dummyRideIncidents,
-  dummyRides,
-} from "../data/rides";
+  adminRideService,
+} from "../services/rideService";
 
 import type {
+  AdminRide,
   Ride,
-  RideDriverOption,
-  RideIncident,
-  RideIncidentStatus,
-  RideStatus,
+  RideCatalogAdminData,
 } from "../types/ride";
 
-interface RideStoreState {
+import {
+  useAuthStore,
+} from "./authStore";
+
+import {
+  usePassengerStore,
+} from "./passengerStore";
+
+import {
+  useDriverStore,
+} from "./driverStore";
+
+type RideState = {
+  loading: boolean;
+  loaded: boolean;
+  error: string | null;
+
+  catalog: RideCatalogAdminData | null;
   rides: Ride[];
+  total: number;
+  incidents: Array<Record<string, unknown>>;
 
-  drivers:
-    RideDriverOption[];
+  loadCatalog: () => Promise<void>;
 
-  incidents:
-    RideIncident[];
+  loadRides: (filters?: {
+    status?: string;
+    cityId?: string;
+    search?: string;
+  }) => Promise<void>;
 
   setRideStatus: (
     rideId: string,
-    status: RideStatus,
-  ) => void;
-
-  assignDriver: (
-    rideId: string,
-    driverId: string,
+    status: string,
   ) => void;
 
   cancelRide: (
     rideId: string,
-    reason: string,
   ) => void;
 
   setIncidentStatus: (
     incidentId: string,
-    status:
-      RideIncidentStatus,
+    status: string,
   ) => void;
+
+  updatePricing: (
+    pricingId: string,
+    input: Record<string, unknown>,
+  ) => Promise<void>;
+};
+
+function token() {
+  const accessToken =
+    useAuthStore.getState().accessToken;
+
+  if (!accessToken) {
+    throw new Error(
+      "Safari admin session is required.",
+    );
+  }
+
+  return accessToken;
+}
+
+function numberValue(
+  value:
+    | number
+    | string
+    | null
+    | undefined,
+) {
+  const parsed =
+    Number(value ?? 0);
+
+  return Number.isFinite(
+    parsed,
+  )
+    ? parsed
+    : 0;
+}
+
+function mapRide(
+  item: AdminRide,
+): Ride {
+  const passengers =
+    usePassengerStore.getState()
+      .passengers ?? [];
+
+  const drivers =
+    useDriverStore.getState()
+      .drivers ?? [];
+
+  const passenger =
+    passengers.find(
+      (value) =>
+        value.id ===
+        item.passenger_id,
+    );
+
+  const driver =
+    item.driver_id
+      ? drivers.find(
+          (value) =>
+            value.id ===
+            item.driver_id,
+        )
+      : null;
+
+  return {
+    id: item.id,
+
+    passengerId:
+      item.passenger_id,
+
+    passengerName:
+      passenger?.fullName ??
+      "Safari Passenger",
+
+    passengerPhone:
+      passenger?.phone ??
+      "—",
+
+    driverId:
+      item.driver_id,
+
+    driverName:
+      driver?.fullName ??
+      null,
+
+    driverPhone:
+      driver?.phone ??
+      null,
+
+    vehicleName:
+      item.vehicle_id
+        ? "Assigned vehicle"
+        : null,
+
+    vehiclePlate: null,
+
+    region:
+      "Pakistan",
+
+    city:
+      item.service_cities
+        ?.name ??
+      "Pakistan",
+
+    status:
+      item.ride_status,
+
+    rideType:
+      item.ride_categories
+        ?.name ??
+      item.ride_categories
+        ?.code ??
+      "Safari Ride",
+
+    pickup:
+      item.pickup_address ??
+      "Pickup unavailable",
+
+    destination:
+      item.dropoff_address ??
+      "Destination unavailable",
+
+    distanceKm:
+      numberValue(
+        item.estimated_distance_km,
+      ),
+
+    estimatedDurationMinutes:
+      numberValue(
+        item.estimated_duration_minutes,
+      ),
+
+    estimatedFare:
+      numberValue(
+        item.estimated_fare,
+      ),
+
+    finalFare:
+      item.final_fare ===
+      null
+        ? null
+        : numberValue(
+            item.final_fare,
+          ),
+
+    paymentMethod:
+      item.payment_method ??
+      "cash",
+
+    scheduled:
+      item.booking_type ===
+      "scheduled",
+
+    timeline: [],
+
+    createdAt:
+      item.created_at,
+  };
 }
 
 export const useRideStore =
-  create<RideStoreState>(
-    (set, get) => ({
-      rides: dummyRides,
+  create<RideState>((set, get) => ({
+    loading: false,
+    loaded: false,
+    error: null,
 
-      drivers:
-        dummyAvailableDrivers,
+    catalog: null,
+    rides: [],
+    total: 0,
+    incidents: [],
 
-      incidents:
-        dummyRideIncidents,
+    loadCatalog:
+      async () => {
+        try {
+          const catalog =
+            await adminRideService.catalog(
+              token(),
+            );
 
-      setRideStatus: (
-        rideId,
-        status,
-      ) => {
-        set((state) => ({
-          rides:
-            state.rides.map(
-              (ride) => {
-                if (
-                  ride.id !==
-                  rideId
-                ) {
-                  return ride;
-                }
-
-                const entry = {
-                  id:
-                    `RTL-${Date.now()}`,
-
-                  title:
-                    `Ride status changed to ${status.replace(
-                      "_",
-                      " ",
-                    )}`,
-
-                  createdAt:
-                    new Date().toISOString(),
-                };
-
-                return {
-                  ...ride,
-
-                  status,
-
-                  completedAt:
-                    status ===
-                    "completed"
-                      ? new Date().toISOString()
-                      : ride.completedAt,
-
-                  timeline: [
-                    ...ride.timeline,
-                    entry,
-                  ],
-                };
-              },
-            ),
-        }));
-      },
-
-      assignDriver: (
-        rideId,
-        driverId,
-      ) => {
-        const driver =
-          get().drivers.find(
-            (item) =>
-              item.id ===
-              driverId,
-          );
-
-        if (!driver) {
-          return;
+          set({
+            catalog,
+          });
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Could not load Safari ride catalog.",
+          });
         }
-
-        set((state) => ({
-          rides:
-            state.rides.map(
-              (ride) =>
-                ride.id ===
-                rideId
-                  ? {
-                      ...ride,
-
-                      driverId:
-                        driver.id,
-
-                      driverName:
-                        driver.name,
-
-                      driverPhone:
-                        driver.phone,
-
-                      vehicleName:
-                        driver.vehicle,
-
-                      vehiclePlate:
-                        driver.vehiclePlate,
-
-                      status:
-                        "driver_assigned",
-
-                      timeline: [
-                        ...ride.timeline,
-
-                        {
-                          id:
-                            `RTL-${Date.now()}`,
-
-                          title:
-                            "Driver assigned",
-
-                          description:
-                            `${driver.name} assigned manually by operations.`,
-
-                          createdAt:
-                            new Date().toISOString(),
-                        },
-                      ],
-                    }
-                  : ride,
-            ),
-        }));
       },
 
-      cancelRide: (
+    loadRides:
+      async (
+        filters,
+      ) => {
+        set({
+          loading: true,
+          error: null,
+        });
+
+        try {
+          const [
+            data,
+          ] =
+            await Promise.all([
+              adminRideService.list(
+                token(),
+                filters,
+              ),
+              usePassengerStore
+                .getState()
+                .loaded
+                ? Promise.resolve()
+                : usePassengerStore
+                    .getState()
+                    .load(),
+              useDriverStore
+                .getState()
+                .loaded
+                ? Promise.resolve()
+                : useDriverStore
+                    .getState()
+                    .load(),
+            ]);
+
+          const rides =
+            Array.isArray(
+              data.rides,
+            )
+              ? data.rides.map(
+                  mapRide,
+                )
+              : [];
+
+          set({
+            rides,
+            total:
+              Number(
+                data.total ??
+                  rides.length,
+              ),
+            loaded: true,
+          });
+        } catch (error) {
+          set({
+            rides: [],
+            total: 0,
+            loaded: true,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Could not load Safari rides.",
+          });
+        } finally {
+          set({
+            loading: false,
+          });
+        }
+      },
+
+    setRideStatus: (
+      rideId,
+      status,
+    ) => {
+      set({
+        rides:
+          get().rides.map(
+            (ride) =>
+              ride.id ===
+              rideId
+                ? {
+                    ...ride,
+                    status,
+                  }
+                : ride,
+          ),
+      });
+    },
+
+    cancelRide: (
+      rideId,
+    ) => {
+      get().setRideStatus(
         rideId,
-        reason,
+        "cancelled_by_admin",
+      );
+    },
+
+    setIncidentStatus: (
+      incidentId,
+      status,
+    ) => {
+      set({
+        incidents:
+          get().incidents.map(
+            (incident) =>
+              incident.id ===
+              incidentId
+                ? {
+                    ...incident,
+                    status,
+                  }
+                : incident,
+          ),
+      });
+    },
+
+    updatePricing:
+      async (
+        pricingId,
+        input,
       ) => {
-        set((state) => ({
-          rides:
-            state.rides.map(
-              (ride) =>
-                ride.id ===
-                rideId
-                  ? {
-                      ...ride,
+        await adminRideService.updatePricing(
+          token(),
+          pricingId,
+          input,
+        );
 
-                      status:
-                        "cancelled",
-
-                      cancelledAt:
-                        new Date().toISOString(),
-
-                      cancelledBy:
-                        "admin",
-
-                      cancellationReason:
-                        reason,
-
-                      timeline: [
-                        ...ride.timeline,
-
-                        {
-                          id:
-                            `RTL-${Date.now()}`,
-
-                          title:
-                            "Ride cancelled",
-
-                          description:
-                            reason,
-
-                          createdAt:
-                            new Date().toISOString(),
-                        },
-                      ],
-                    }
-                  : ride,
-            ),
-        }));
+        await get().loadCatalog();
       },
-
-      setIncidentStatus: (
-        incidentId,
-        status,
-      ) => {
-        set((state) => ({
-          incidents:
-            state.incidents.map(
-              (incident) =>
-                incident.id ===
-                incidentId
-                  ? {
-                      ...incident,
-                      status,
-                    }
-                  : incident,
-            ),
-        }));
-      },
-    }),
-  );
+  }));

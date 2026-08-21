@@ -29,11 +29,11 @@ export interface MerchantPortalProfile {
 
   region:
     | "Pakistan"
-    | "Germany";
+    | "Pakistan";
 
   currency:
     | "PKR"
-    | "EUR";
+    | "PKR";
 
   commissionPercent: number;
 
@@ -70,7 +70,7 @@ export interface MerchantEarningEntry {
 
   currency:
     | "PKR"
-    | "EUR";
+    | "PKR";
 
   status:
     | "pending"
@@ -89,7 +89,7 @@ export interface MerchantPayoutEntry {
 
   currency:
     | "PKR"
-    | "EUR";
+    | "PKR";
 
   bankName: string;
 

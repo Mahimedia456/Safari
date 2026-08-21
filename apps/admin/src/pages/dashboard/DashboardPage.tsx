@@ -16,6 +16,8 @@ import {
   useAuthStore,
 } from "../../store/authStore";
 
+import { useAnalyticsStore } from "../../store/analyticsStore";
+
 type StatCard = {
   label: string;
 
@@ -391,97 +393,100 @@ export default function DashboardPage() {
 }
 
 function AdminDashboard() {
-  const stats: StatCard[] =
-    [
-      {
-        label:
-          "Active rides",
+  const dashboard =
+    useAnalyticsStore(
+      (state) =>
+        state.dashboard,
+    );
 
-        value: "128",
+  const loading =
+    useAnalyticsStore(
+      (state) =>
+        state.loading,
+    );
 
-        helper:
-          "Live across regions",
+  const error =
+    useAnalyticsStore(
+      (state) =>
+        state.error,
+    );
 
-        trend:
-          "+8.4% today",
-
-        icon: Bike,
-      },
-
-      {
-        label:
-          "Active drivers",
-
-        value: "642",
-
-        helper:
-          "Across regions",
-
-        icon: Users,
-      },
-
-      {
-        label:
-          "Merchants",
-
-        value: "384",
-
-        helper:
-          "Approved partners",
-
-        icon: Store,
-      },
-
-      {
-        label:
-          "Food orders",
-
-        value: "726",
-
-        helper: "Today",
-
-        icon:
-          UtensilsCrossed,
-      },
-
-      {
-        label:
-          "Grocery orders",
-
-        value: "418",
-
-        helper: "Today",
-
-        icon:
-          ShoppingBasket,
-      },
-
-      {
-        label:
-          "Safari revenue",
-
-        value:
-          "Rs 428K",
-
-        helper:
-          "Platform earnings",
-
-        trend:
-          "+9.7% today",
-
-        icon:
-          CircleDollarSign,
-      },
-    ];
+  const stats: StatCard[] = [
+    {
+      label: "Active rides",
+      value: String(
+        dashboard?.operations
+          .activeRides ?? 0,
+      ),
+      helper:
+        "Live Pakistan operations",
+      icon: Bike,
+    },
+    {
+      label: "Passengers",
+      value: String(
+        dashboard?.users
+          .passengers ?? 0,
+      ),
+      helper:
+        "Registered customers",
+      icon: Users,
+    },
+    {
+      label: "Drivers",
+      value: String(
+        dashboard?.users
+          .drivers ?? 0,
+      ),
+      helper:
+        "Driver accounts",
+      icon: Users,
+    },
+    {
+      label: "Merchants",
+      value: String(
+        dashboard?.users
+          .merchants ?? 0,
+      ),
+      helper:
+        "Marketplace partners",
+      icon: Store,
+    },
+    {
+      label: "Open incidents",
+      value: String(
+        dashboard?.operations
+          .openIncidents ?? 0,
+      ),
+      helper:
+        "Needs attention",
+      icon: Clock3,
+    },
+    {
+      label: "Platform GMV",
+      value: `Rs ${Number(
+        dashboard?.gmv.total ?? 0,
+      ).toLocaleString()}`,
+      helper:
+        "Completed business volume",
+      icon:
+        CircleDollarSign,
+    },
+  ];
 
   return (
     <div>
       <DashboardHeading
-        eyebrow="Safari Control Center"
+        eyebrow="Safari Pakistan Control Center"
         title="Dashboard"
-        description="Overview of Safari operations across rides and all marketplace services."
-        showRegion
+        description="Live operational overview from the Safari backend and Supabase."
       />
+
+      {error ? (
+        <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+          {error}
+        </div>
+      ) : null}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {stats.map(
@@ -496,33 +501,35 @@ function AdminDashboard() {
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.65fr_1fr]">
         <AnalyticsCard
-          title="Operations overview"
-          description="Real analytics will populate this area when Safari API integration starts."
+          title="Pakistan operations"
+          description={
+            loading
+              ? "Loading live Safari analytics..."
+              : `Ride GMV Rs ${Number(
+                  dashboard?.gmv.rides ?? 0,
+                ).toLocaleString()} · Commerce GMV Rs ${Number(
+                  dashboard?.gmv.commerce ?? 0,
+                ).toLocaleString()} · Services GMV Rs ${Number(
+                  dashboard?.gmv.services ?? 0,
+                ).toLocaleString()}`
+          }
         />
 
         <AttentionCard
-          title="Pending actions"
-          rows={[
-            [
-              "Merchant applications",
-              "14",
-            ],
-
-            [
-              "Driver applications",
-              "8",
-            ],
-
-            [
-              "Pharmacy verification",
-              "2",
-            ],
-
-            [
-              "Open disputes",
-              "6",
-            ],
-          ]}
+          title="Operations incidents"
+          rows={
+            dashboard?.incidents
+              ?.slice(0, 5)
+              .map(
+                (incident) => [
+                  incident.title,
+                  incident.severity,
+                ] as [
+                  string,
+                  string,
+                ],
+              ) ?? []
+          }
         />
       </div>
     </div>
@@ -585,7 +592,7 @@ function DashboardHeading({
   eyebrow,
   title,
   description,
-  showRegion = false,
+  showMarket = false,
 }: {
   eyebrow: string;
 
@@ -593,7 +600,6 @@ function DashboardHeading({
 
   description: string;
 
-  showRegion?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -612,21 +618,6 @@ function DashboardHeading({
       </div>
 
       <div className="flex items-center gap-2">
-        {showRegion && (
-          <select className="safari-select w-auto min-w-[120px]">
-            <option>
-              All regions
-            </option>
-
-            <option>
-              Pakistan
-            </option>
-
-            <option>
-              Germany
-            </option>
-          </select>
-        )}
 
         <select className="safari-select w-auto min-w-[105px]">
           <option>

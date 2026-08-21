@@ -17,7 +17,7 @@ import RegionStatusBadge from "../../components/regions/RegionStatusBadge";
 import RegionSupportPanel from "../../components/regions/RegionSupportPanel";
 
 import {
-  getRegionPermissions,
+  getMarketPermissions,
 } from "../../config/regionPermissions";
 
 import {
@@ -25,11 +25,11 @@ import {
 } from "../../store/authStore";
 
 import {
-  useRegionStore,
+  useMarketStore,
 } from "../../store/regionStore";
 
 import type {
-  RegionStatus,
+  MarketStatus,
 } from "../../types/region";
 
 export default function RegionDetailPage() {
@@ -44,7 +44,7 @@ export default function RegionDetailPage() {
     );
 
   const region =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.regions.find(
           (item) =>
@@ -54,9 +54,9 @@ export default function RegionDetailPage() {
     );
 
   const setStatus =
-    useRegionStore(
+    useMarketStore(
       (state) =>
-        state.setRegionStatus,
+        state.setMarketStatus,
     );
 
   if (!region) {
@@ -73,11 +73,11 @@ export default function RegionDetailPage() {
   }
 
   const permissions =
-    getRegionPermissions(
+    getMarketPermissions(
       user.role,
     );
 
-  const statuses: RegionStatus[] =
+  const statuses: MarketStatus[] =
     [
       "active",
       "maintenance",
@@ -91,7 +91,7 @@ export default function RegionDetailPage() {
         className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-safari-600"
       >
         <ArrowLeft size={16} />
-        Regions
+        Markets
       </Link>
 
       <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -121,14 +121,14 @@ export default function RegionDetailPage() {
           </p>
         </div>
 
-        {permissions.editRegionStatus && (
+        {permissions.editMarketStatus && (
           <select
             value={region.status}
             onChange={(event) =>
               setStatus(
                 region.id,
                 event.target
-                  .value as RegionStatus,
+                  .value as MarketStatus,
               )
             }
             className="safari-select"

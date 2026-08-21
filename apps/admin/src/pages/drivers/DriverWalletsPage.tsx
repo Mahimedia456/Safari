@@ -32,7 +32,7 @@ export default function DriverWalletsPage() {
               <tr>
                 {[
                   "Driver",
-                  "Region",
+                  "Market",
                   "Balance",
                   "Pending Payout",
                   "Month Earnings",
@@ -52,12 +52,12 @@ export default function DriverWalletsPage() {
             </thead>
 
             <tbody>
-              {drivers.map(
+              {(drivers ?? []).map(
                 (driver) => {
                   const symbol =
                     driver.region ===
-                    "Germany"
-                      ? "€"
+                    "Pakistan"
+                      ? "Rs "
                       : "Rs ";
 
                   return (

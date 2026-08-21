@@ -16,14 +16,14 @@ export default function PassengerStats({
   passengers: Passenger[];
 }) {
   const active =
-    passengers.filter(
+    (passengers ?? []).filter(
       (passenger) =>
         passenger.status ===
         "active",
     ).length;
 
   const restricted =
-    passengers.filter(
+    (passengers ?? []).filter(
       (passenger) =>
         [
           "suspended",

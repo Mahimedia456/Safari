@@ -413,10 +413,10 @@ export const dummyAuditLogs: AuditLog[] = [
     action:
       "region_update",
 
-    module: "Regions",
+    module: "Markets",
 
     description:
-      "Germany pharmacy merchant registration disabled.",
+      "Pakistan pharmacy merchant registration disabled.",
 
     ipAddress:
       "192.168.1.22",

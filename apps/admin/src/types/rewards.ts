@@ -49,7 +49,7 @@ export interface PassengerRewardAccount {
 
   region:
     | "Pakistan"
-    | "Germany";
+    | "Pakistan";
 
   availablePoints: number;
 

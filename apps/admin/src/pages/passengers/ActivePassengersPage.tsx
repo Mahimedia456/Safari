@@ -12,7 +12,7 @@ export default function ActivePassengersPage() {
     );
 
   const active =
-    passengers.filter(
+    (passengers ?? []).filter(
       (passenger) =>
         passenger.status ===
         "active",

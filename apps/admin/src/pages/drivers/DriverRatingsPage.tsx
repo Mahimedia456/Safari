@@ -32,7 +32,7 @@ export default function DriverRatingsPage() {
       </div>
 
       <div className="space-y-4">
-        {ratings.map(
+        {(ratings ?? []).map(
           (rating) => {
             const driver =
               drivers.find(

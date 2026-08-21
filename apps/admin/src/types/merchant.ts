@@ -10,100 +10,46 @@ export type MerchantStatus =
   | "rejected"
   | "suspended";
 
-export type VerificationStatus =
-  | "pending"
-  | "verified"
-  | "rejected";
+export type AdminMerchant = {
+  user_id: string;
+  merchant_type: MerchantType;
+  business_name: string | null;
+  legal_name: string | null;
+  verification_status: string;
+  commission_percent: number | string;
+  payout_status: string;
+  approved_at: string | null;
+  rejection_reason: string | null;
+};
 
-export type DocumentType =
-  | "identity"
-  | "business_registration"
-  | "tax"
-  | "bank"
-  | "license";
-
-export interface MerchantDocument {
+export type Merchant = {
   id: string;
-  type: DocumentType;
-  name: string;
-  number?: string;
-  expiryDate?: string;
-  status: VerificationStatus;
-}
-
-export interface MerchantStore {
-  id: string;
-  name: string;
   type: MerchantType;
-  city: string;
-  country: string;
-  status:
-    | "active"
-    | "inactive"
-    | "pending";
-  commissionPercentage: number;
-}
-
-export interface MerchantBankDetails {
-  accountTitle: string;
-  bankName: string;
-  accountNumber: string;
-  iban?: string;
-  currency: string;
-  verified: boolean;
-}
-
-export interface MerchantNote {
-  id: string;
-  text: string;
-  author: string;
-  createdAt: string;
-}
-
-export interface MerchantActivity {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-}
-
-export interface Merchant {
-  id: string;
-
-  ownerName: string;
   businessName: string;
-
+  ownerName: string;
   email: string;
   phone: string;
-
-  type: MerchantType;
-  status: MerchantStatus;
-
-  country: string;
   city: string;
-
-  address: string;
-
-  registeredAt: string;
-
-  approvedAt?: string;
-
-  rejectionReason?: string;
-  suspensionReason?: string;
-
+  country: "Pakistan";
+  status: MerchantStatus;
   totalStores: number;
-  activeStores: number;
-
   totalOrders: number;
-  grossSales: number;
+  commissionPercent: number;
+  payoutStatus: string;
+  approvedAt: string | null;
+};
 
-  documents: MerchantDocument[];
-
-  stores: MerchantStore[];
-
-  bankDetails: MerchantBankDetails;
-
-  notes: MerchantNote[];
-
-  activities: MerchantActivity[];
-}
+export type AdminUnifiedOrder = {
+  id: string;
+  source_type: MerchantType;
+  source_id: string;
+  order_number: string;
+  customer_id: string;
+  merchant_user_id: string | null;
+  status: string;
+  currency_code: string;
+  total: number | string | null;
+  payment_method: string | null;
+  payment_status: string | null;
+  created_at: string;
+};

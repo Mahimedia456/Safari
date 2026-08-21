@@ -49,7 +49,7 @@ export default function GrocerySubstitutionsPage() {
       </div>
 
       <div className="space-y-4">
-        {substitutions.map(
+        {(substitutions ?? []).map(
           (item) => (
             <div
               key={

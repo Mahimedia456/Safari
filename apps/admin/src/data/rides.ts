@@ -217,7 +217,7 @@ export const dummyRides: Ride[] = [
   {
     id: "RIDE-10003",
 
-    region: "Germany",
+    region: "Pakistan",
 
     city: "Berlin",
 
@@ -227,7 +227,7 @@ export const dummyRides: Ride[] = [
       "Daniel Weber",
 
     passengerPhone:
-      "+49 151 8844221",
+      "+92 151 8844221",
 
     rideType: "premium",
 

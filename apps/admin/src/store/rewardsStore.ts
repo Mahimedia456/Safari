@@ -192,10 +192,10 @@ const passengerRewards:
         "anna@example.de",
 
       phone:
-        "+49 151 12345678",
+        "+92 151 12345678",
 
       region:
-        "Germany",
+        "Pakistan",
 
       availablePoints: 2380,
 

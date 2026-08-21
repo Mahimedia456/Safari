@@ -68,7 +68,7 @@ export default function PassengerWalletsPage() {
               <tr>
                 {[
                   "Passenger",
-                  "Region",
+                  "Market",
                   "Balance",
                   "Total Spend",
                   "Refunds",
@@ -88,12 +88,12 @@ export default function PassengerWalletsPage() {
             </thead>
 
             <tbody>
-              {passengers.map(
+              {(passengers ?? []).map(
                 (passenger) => {
                   const symbol =
                     passenger.region ===
-                    "Germany"
-                      ? "€"
+                    "Pakistan"
+                      ? "Rs "
                       : "Rs ";
 
                   return (

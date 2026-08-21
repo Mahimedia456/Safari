@@ -1,18 +1,12 @@
-import {
-  create,
-} from "zustand";
+import { create } from "zustand";
 
 import {
-  dummyServiceAreas,
-  dummyServiceAvailability,
-  dummyServiceBookings,
-  dummyServiceCategories,
-  dummyServicePromotions,
-  dummyServiceRefunds,
-  dummyServiceReviews,
-  dummyServiceStaff,
-  dummyServices,
-} from "../data/services";
+  adminServicesMarketplaceService,
+} from "../services/servicesMarketplaceService";
+
+import {
+  useAuthStore,
+} from "./authStore";
 
 import type {
   ServiceArea,
@@ -27,288 +21,276 @@ import type {
   ServiceStaff,
 } from "../types/services";
 
-interface ServicesState {
+type ServicesState = {
+  loading: boolean;
+  loaded: boolean;
+  error: string | null;
+
   bookings: ServiceBooking[];
-
   services: ServiceCatalogItem[];
-
   categories: ServiceCategory[];
-
   staff: ServiceStaff[];
-
   availability: ServiceAvailability[];
-
   areas: ServiceArea[];
-
   reviews: ServiceReview[];
-
   promotions: ServicePromotion[];
-
   refunds: ServiceRefund[];
+
+  load: () => Promise<void>;
 
   setBookingStatus: (
     bookingId: string,
     status: ServiceBookingStatus,
-  ) => void;
+  ) => Promise<void>;
 
-  assignStaff: (
-    bookingId: string,
-    staffId: string,
-  ) => void;
-
-  toggleService: (
-    serviceId: string,
-  ) => void;
-
-  toggleCategory: (
-    categoryId: string,
-  ) => void;
-
-  toggleStaff: (
-    staffId: string,
-  ) => void;
-
-  toggleAvailability: (
-    availabilityId: string,
-  ) => void;
-
-  toggleArea: (
-    areaId: string,
-  ) => void;
-
-  togglePromotion: (
-    promotionId: string,
-  ) => void;
-
+  assignStaff: (bookingId: string, staffId: string) => void;
+  toggleService: (serviceId: string) => void;
+  toggleCategory: (categoryId: string) => void;
+  toggleStaff: (staffId: string) => void;
+  toggleAvailability: (availabilityId: string) => void;
+  toggleArea: (areaId: string) => void;
+  togglePromotion: (promotionId: string) => void;
   setRefundStatus: (
     refundId: string,
-    status:
-      | "approved"
-      | "rejected",
+    status: "approved" | "rejected",
   ) => void;
+};
+
+function token() {
+  const value =
+    useAuthStore.getState()
+      .accessToken;
+
+  if (!value) {
+    throw new Error(
+      "Safari admin session is required.",
+    );
+  }
+
+  return value;
+}
+
+function normalizeStatus(
+  status: string,
+): ServiceBookingStatus {
+  if (
+    status ===
+    "requested"
+  ) {
+    return "pending";
+  }
+
+  if (
+    status ===
+      "professional_assigned" ||
+    status ===
+      "on_the_way"
+  ) {
+    return "assigned";
+  }
+
+  if (
+    status.startsWith(
+      "cancelled",
+    )
+  ) {
+    return "cancelled";
+  }
+
+  return status as ServiceBookingStatus;
 }
 
 export const useServicesStore =
-  create<ServicesState>(
-    (set, get) => ({
-      bookings:
-        dummyServiceBookings,
+  create<ServicesState>((set, get) => ({
+    loading: false,
+    loaded: false,
+    error: null,
 
-      services:
-        dummyServices,
+    bookings: [],
+    services: [],
+    categories: [],
+    staff: [],
+    availability: [],
+    areas: [],
+    reviews: [],
+    promotions: [],
+    refunds: [],
 
-      categories:
-        dummyServiceCategories,
+    load: async () => {
+      set({
+        loading: true,
+        error: null,
+      });
 
-      staff:
-        dummyServiceStaff,
-
-      availability:
-        dummyServiceAvailability,
-
-      areas:
-        dummyServiceAreas,
-
-      reviews:
-        dummyServiceReviews,
-
-      promotions:
-        dummyServicePromotions,
-
-      refunds:
-        dummyServiceRefunds,
-
-      setBookingStatus: (
-        bookingId,
-        status,
-      ) => {
-        set((state) => ({
-          bookings:
-            state.bookings.map(
-              (booking) =>
-                booking.id ===
-                bookingId
-                  ? {
-                      ...booking,
-                      status,
-                    }
-                  : booking,
+      try {
+        const [
+          bookingData,
+          providerData,
+        ] =
+          await Promise.all([
+            adminServicesMarketplaceService.bookings(
+              token(),
             ),
-        }));
-      },
+            adminServicesMarketplaceService.providers(
+              token(),
+            ),
+          ]);
 
-      assignStaff: (
-        bookingId,
-        staffId,
-      ) => {
-        const staffMember =
-          get().staff.find(
-            (item) =>
-              item.id ===
-              staffId,
+        const providerNames =
+          new Map(
+            (
+              providerData.providers ??
+              []
+            ).map(
+              (provider: any) => [
+                provider.id,
+                provider.business_name ??
+                  "Safari Services",
+              ],
+            ),
           );
 
-        if (!staffMember) {
-          return;
-        }
+        const bookings =
+          (
+            bookingData.bookings ??
+            []
+          ).map(
+            (
+              booking: any,
+            ): ServiceBooking => {
+              const scheduled =
+                booking.scheduled_for
+                  ? new Date(
+                      booking.scheduled_for,
+                    )
+                  : null;
 
-        set((state) => ({
-          bookings:
-            state.bookings.map(
-              (booking) =>
-                booking.id ===
-                bookingId
-                  ? {
-                      ...booking,
+              const total =
+                Number(
+                  booking.final_total ??
+                    booking.estimated_total ??
+                    0,
+                );
 
-                      staffId:
-                        staffMember.id,
+              return {
+                id: booking.id,
+                businessId:
+                  booking.provider_id,
+                businessName:
+                  providerNames.get(
+                    booking.provider_id,
+                  ) ??
+                  "Safari Services",
+                serviceId:
+                  booking.service_id,
+                serviceName:
+                  booking.service_id,
+                customerName:
+                  booking.customer_id,
+                customerPhone:
+                  "—",
+                status:
+                  normalizeStatus(
+                    booking.booking_status,
+                  ),
+                scheduledDate:
+                  scheduled
+                    ? scheduled
+                        .toISOString()
+                        .slice(
+                          0,
+                          10,
+                        )
+                    : "—",
+                scheduledTime:
+                  scheduled
+                    ? scheduled
+                        .toTimeString()
+                        .slice(
+                          0,
+                          5,
+                        )
+                    : "—",
+                durationMinutes:
+                  0,
+                address:
+                  booking.service_address ??
+                  "—",
+                price: total,
+                discount: 0,
+                serviceFee: 0,
+                total,
+                paymentMethod:
+                  (
+                    booking.payment_method ??
+                    "cash"
+                  ) as ServiceBooking["paymentMethod"],
+                notes:
+                  booking.customer_note ??
+                  undefined,
+                createdAt:
+                  booking.created_at ??
+                  booking.requested_at ??
+                  new Date().toISOString(),
+              };
+            },
+          );
 
-                      staffName:
-                        staffMember.name,
+        set({
+          bookings,
+          loaded: true,
+        });
+      } catch (error) {
+        set({
+          bookings: [],
+          loaded: true,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Could not load Safari Services.",
+        });
+      } finally {
+        set({
+          loading: false,
+        });
+      }
+    },
 
-                      status:
-                        booking.status ===
-                        "pending"
-                          ? "assigned"
-                          : booking.status,
-                    }
-                  : booking,
-            ),
-        }));
-      },
-
-      toggleService: (
-        serviceId,
-      ) => {
-        set((state) => ({
-          services:
-            state.services.map(
-              (service) =>
-                service.id ===
-                serviceId
-                  ? {
-                      ...service,
-                      active:
-                        !service.active,
-                    }
-                  : service,
-            ),
-        }));
-      },
-
-      toggleCategory: (
-        categoryId,
-      ) => {
-        set((state) => ({
-          categories:
-            state.categories.map(
-              (category) =>
-                category.id ===
-                categoryId
-                  ? {
-                      ...category,
-                      active:
-                        !category.active,
-                    }
-                  : category,
-            ),
-        }));
-      },
-
-      toggleStaff: (
-        staffId,
-      ) => {
-        set((state) => ({
-          staff:
-            state.staff.map(
-              (staff) =>
-                staff.id ===
-                staffId
-                  ? {
-                      ...staff,
-                      active:
-                        !staff.active,
-                    }
-                  : staff,
-            ),
-        }));
-      },
-
-      toggleAvailability: (
-        availabilityId,
-      ) => {
-        set((state) => ({
-          availability:
-            state.availability.map(
-              (item) =>
-                item.id ===
-                availabilityId
-                  ? {
-                      ...item,
-                      enabled:
-                        !item.enabled,
-                    }
-                  : item,
-            ),
-        }));
-      },
-
-      toggleArea: (
-        areaId,
-      ) => {
-        set((state) => ({
-          areas:
-            state.areas.map(
-              (area) =>
-                area.id ===
-                areaId
-                  ? {
-                      ...area,
-                      active:
-                        !area.active,
-                    }
-                  : area,
-            ),
-        }));
-      },
-
-      togglePromotion: (
-        promotionId,
-      ) => {
-        set((state) => ({
-          promotions:
-            state.promotions.map(
-              (promotion) =>
-                promotion.id ===
-                promotionId
-                  ? {
-                      ...promotion,
-                      active:
-                        !promotion.active,
-                    }
-                  : promotion,
-            ),
-        }));
-      },
-
-      setRefundStatus: (
-        refundId,
+    setBookingStatus:
+      async (
+        bookingId,
         status,
       ) => {
-        set((state) => ({
-          refunds:
-            state.refunds.map(
-              (refund) =>
-                refund.id ===
-                refundId
-                  ? {
-                      ...refund,
-                      status,
-                    }
-                  : refund,
-            ),
-        }));
+        const apiStatus =
+          status ===
+          "pending"
+            ? "requested"
+            : status ===
+                "assigned"
+              ? "professional_assigned"
+              : status ===
+                  "cancelled"
+                ? "cancelled_by_admin"
+                : status;
+
+        await adminServicesMarketplaceService.updateBookingStatus(
+          token(),
+          bookingId,
+          {
+            status:
+              apiStatus,
+          },
+        );
+
+        await get().load();
       },
-    }),
-  );
+
+    assignStaff: () => undefined,
+    toggleService: () => undefined,
+    toggleCategory: () => undefined,
+    toggleStaff: () => undefined,
+    toggleAvailability: () => undefined,
+    toggleArea: () => undefined,
+    togglePromotion: () => undefined,
+    setRefundStatus: () => undefined,
+  }));

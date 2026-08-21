@@ -107,9 +107,9 @@ export const passengerRewardsData:
 
       email: "anna@example.de",
 
-      phone: "+49 151 12345678",
+      phone: "+92 151 12345678",
 
-      region: "Germany",
+      region: "Pakistan",
 
       availablePoints: 2380,
 
@@ -163,9 +163,9 @@ export const passengerRewardsData:
 
       email: "julia@example.de",
 
-      phone: "+49 160 98765432",
+      phone: "+92 160 98765432",
 
-      region: "Germany",
+      region: "Pakistan",
 
       availablePoints: 1680,
 

@@ -24,7 +24,7 @@ export default function FoodReviewsPage() {
       </div>
 
       <div className="space-y-4">
-        {reviews.map(
+        {(reviews ?? []).map(
           (review) => (
             <article
               key={

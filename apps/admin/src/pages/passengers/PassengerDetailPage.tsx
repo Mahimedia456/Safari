@@ -58,7 +58,7 @@ export default function PassengerDetailPage() {
   const rides =
     usePassengerStore(
       (state) =>
-        state.rides.filter(
+        (state.rides ?? []).filter(
           (ride) =>
             ride.passengerId ===
             passengerId,
@@ -206,7 +206,7 @@ export default function PassengerDetailPage() {
 
             <Info
               icon={MapPin}
-              label="Region"
+              label="Market"
               value={`${passenger.city}, ${passenger.region}`}
             />
 

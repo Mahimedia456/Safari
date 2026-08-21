@@ -12,7 +12,7 @@ export default function SuspendedPassengersPage() {
     );
 
   const restricted =
-    passengers.filter(
+    (passengers ?? []).filter(
       (passenger) =>
         [
           "suspended",

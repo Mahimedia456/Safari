@@ -47,7 +47,7 @@ export default function ServiceCatalogTable({
           </thead>
 
           <tbody>
-            {services.map(
+            {(services ?? []).map(
               (service) => (
                 <tr
                   key={

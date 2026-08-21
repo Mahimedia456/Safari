@@ -1,13 +1,13 @@
 import {
-  useRegionStore,
+  useMarketStore,
 } from "../../store/regionStore";
 
 import type {
-  RegionOperations,
-  SafariRegion,
+  MarketOperations,
+  SafariMarket,
 } from "../../types/region";
 
-type BooleanKey = keyof RegionOperations;
+type BooleanKey = keyof MarketOperations;
 
 const options: Array<{
   key: BooleanKey;
@@ -83,12 +83,12 @@ export default function RegionOperationsPanel({
   region,
   canEdit,
 }: {
-  region: SafariRegion;
+  region: SafariMarket;
 
   canEdit: boolean;
 }) {
   const update =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.updateOperations,
     );

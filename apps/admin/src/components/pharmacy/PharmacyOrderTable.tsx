@@ -45,7 +45,7 @@ export default function PharmacyOrderTable({
           </thead>
 
           <tbody>
-            {orders.map(
+            {(orders ?? []).map(
               (order) => (
                 <tr
                   key={

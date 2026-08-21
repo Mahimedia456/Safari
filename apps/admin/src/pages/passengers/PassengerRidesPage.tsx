@@ -27,7 +27,7 @@ export default function PassengerRidesPage() {
   const rides =
     usePassengerStore(
       (state) =>
-        state.rides.filter(
+        (state.rides ?? []).filter(
           (ride) =>
             ride.passengerId ===
             passengerId,

@@ -131,8 +131,9 @@ export default function RideDetailPage() {
         </div>
 
         {permissions.changeStatus &&
-          ride.status !==
-            "cancelled" && (
+          !ride.status.startsWith(
+            "cancelled",
+          ) && (
             <select
               value={
                 ride.status
@@ -181,7 +182,7 @@ export default function RideDetailPage() {
               icon={MapPin}
               label="Pickup"
               value={
-                ride.pickup.label
+                ride.pickup
               }
             />
 
@@ -189,7 +190,7 @@ export default function RideDetailPage() {
               icon={MapPin}
               label="Destination"
               value={
-                ride.destination.label
+                ride.destination
               }
             />
 
@@ -250,10 +251,10 @@ export default function RideDetailPage() {
 
               <div className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
                 {ride.region ===
-                "Germany"
-                  ? "€"
+                "Pakistan"
+                  ? "Rs "
                   : "Rs "}
-                {ride.estimatedFare.toLocaleString()}
+                {Number(ride.estimatedFare ?? 0).toLocaleString()}
               </div>
             </div>
 
@@ -266,10 +267,10 @@ export default function RideDetailPage() {
 
                 <div className="mt-1 text-2xl font-bold text-safari-600 dark:text-safari-400">
                   {ride.region ===
-                  "Germany"
-                    ? "€"
+                  "Pakistan"
+                    ? "Rs "
                     : "Rs "}
-                  {ride.finalFare.toLocaleString()}
+                  {Number(ride.finalFare ?? 0).toLocaleString()}
                 </div>
               </div>
             )}

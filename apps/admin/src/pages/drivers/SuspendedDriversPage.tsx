@@ -12,7 +12,7 @@ export default function SuspendedDriversPage() {
     );
 
   const suspended =
-    drivers.filter(
+    (drivers ?? []).filter(
       (driver) =>
         [
           "suspended",

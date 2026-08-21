@@ -19,7 +19,7 @@ export default function MerchantApplicationsPage() {
     );
 
   const pending =
-    merchants.filter(
+    (merchants ?? []).filter(
       (merchant) =>
         merchant.status ===
         "pending",

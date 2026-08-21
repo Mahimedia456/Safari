@@ -47,7 +47,7 @@ export default function ServiceBookingTable({
           </thead>
 
           <tbody>
-            {bookings.map(
+            {(bookings ?? []).map(
               (booking) => (
                 <tr
                   key={

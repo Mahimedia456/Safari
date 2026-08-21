@@ -54,8 +54,8 @@ export default function PricingDashboardPage() {
         />
 
         <Card
-          title="Germany Pricing"
-          path="/pricing/germany"
+          title="Pakistan Pricing"
+          path="/pricing/pakistan"
         />
 
         <Card

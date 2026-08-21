@@ -25,7 +25,7 @@ export default function DriverApplicationTable({
               {[
                 "Application",
                 "Applicant",
-                "Region",
+                "Market",
                 "Vehicle Type",
                 "Submitted",
                 "Status",
@@ -44,7 +44,7 @@ export default function DriverApplicationTable({
           </thead>
 
           <tbody>
-            {applications.map(
+            {(applications ?? []).map(
               (application) => (
                 <tr
                   key={

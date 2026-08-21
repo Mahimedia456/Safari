@@ -57,12 +57,12 @@ export default function FinanceRefundTable({
           </thead>
 
           <tbody>
-            {refunds.map(
+            {(refunds ?? []).map(
               (refund) => {
                 const symbol =
                   refund.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

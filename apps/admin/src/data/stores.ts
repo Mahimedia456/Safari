@@ -415,10 +415,10 @@ export const dummyStores: SafariStore[] =
         "mitte@berlinbites.de",
 
       phone:
-        "+49 151 2345601",
+        "+92 151 2345601",
 
       country:
-        "Germany",
+        "Pakistan",
 
       city: "Berlin",
 

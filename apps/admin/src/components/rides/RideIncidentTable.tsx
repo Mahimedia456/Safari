@@ -67,7 +67,7 @@ export default function RideIncidentTable({
           </thead>
 
           <tbody>
-            {incidents.map(
+            {(incidents ?? []).map(
               (incident) => (
                 <tr
                   key={

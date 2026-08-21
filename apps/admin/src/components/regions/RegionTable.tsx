@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 
 import type {
-  SafariRegion,
+  SafariMarket,
 } from "../../types/region";
 
 import RegionStatusBadge from "./RegionStatusBadge";
@@ -15,7 +15,7 @@ import RegionStatusBadge from "./RegionStatusBadge";
 export default function RegionTable({
   regions,
 }: {
-  regions: SafariRegion[];
+  regions: SafariMarket[];
 }) {
   return (
     <div className="safari-card overflow-hidden">
@@ -24,7 +24,7 @@ export default function RegionTable({
           <thead className="border-b border-slate-100 bg-slate-50/70 dark:border-white/[0.06] dark:bg-white/[0.02]">
             <tr>
               {[
-                "Region",
+                "Market",
                 "Code",
                 "Currency",
                 "Cities",
@@ -88,7 +88,7 @@ export default function RegionTable({
 
                   <td className="px-5 py-4 text-sm text-slate-500">
                     {
-                      region.services.filter(
+                      (region.services ?? []).filter(
                         (item) =>
                           item.enabled,
                       ).length
@@ -101,7 +101,7 @@ export default function RegionTable({
 
                   <td className="px-5 py-4 text-sm text-slate-500">
                     {
-                      region.rides.filter(
+                      (region.rides ?? []).filter(
                         (item) =>
                           item.enabled,
                       ).length

@@ -31,7 +31,7 @@ export default function FoodOrdersPage() {
           .trim()
           .toLowerCase();
 
-      return orders.filter(
+      return (orders ?? []).filter(
         (order) => {
           const matchesSearch =
             !query ||

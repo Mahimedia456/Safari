@@ -1,27 +1,27 @@
 import {
-  useRegionStore,
+  useMarketStore,
 } from "../../store/regionStore";
 
 import type {
-  SafariRegion,
+  SafariMarket,
 } from "../../types/region";
 
 export default function RegionRideMatrix({
   region,
   canEdit,
 }: {
-  region: SafariRegion;
+  region: SafariMarket;
 
   canEdit: boolean;
 }) {
   const toggleRide =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.toggleRideType,
     );
 
   const toggleDrivers =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.toggleRideDriverRegistration,
     );

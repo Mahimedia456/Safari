@@ -50,7 +50,7 @@ export default function ServiceStaffTable({
           </thead>
 
           <tbody>
-            {staff.map(
+            {(staff ?? []).map(
               (member) => (
                 <tr
                   key={

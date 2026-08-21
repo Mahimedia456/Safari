@@ -31,7 +31,7 @@ type CreateAdminUserInput = {
   regionScope:
     | "all"
     | "Pakistan"
-    | "Germany";
+    | "Pakistan";
 };
 
 interface AccessState {
@@ -59,12 +59,12 @@ interface AccessState {
     status: AccessUserStatus,
   ) => void;
 
-  updateRegionScope: (
+  updateMarketScope: (
     userId: string,
     scope:
       | "all"
       | "Pakistan"
-      | "Germany",
+      | "Pakistan",
   ) => void;
 }
 
@@ -239,7 +239,7 @@ export const useAccessStore =
         }));
       },
 
-      updateRegionScope: (
+      updateMarketScope: (
         userId,
         regionScope,
       ) => {

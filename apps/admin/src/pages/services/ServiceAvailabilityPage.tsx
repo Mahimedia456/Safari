@@ -54,7 +54,7 @@ export default function ServiceAvailabilityPage() {
 
       <div className="safari-card p-6">
         <div className="space-y-3">
-          {availability.map(
+          {(availability ?? []).map(
             (item) => (
               <div
                 key={

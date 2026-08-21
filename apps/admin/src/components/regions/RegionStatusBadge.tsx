@@ -1,9 +1,9 @@
 import type {
-  RegionStatus,
+  MarketStatus,
 } from "../../types/region";
 
 const classes: Record<
-  RegionStatus,
+  MarketStatus,
   string
 > = {
   active:
@@ -19,7 +19,7 @@ const classes: Record<
 export default function RegionStatusBadge({
   status,
 }: {
-  status: RegionStatus;
+  status: MarketStatus;
 }) {
   return (
     <span

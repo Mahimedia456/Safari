@@ -44,7 +44,7 @@ export default function FoodStats({
         "Active Orders",
 
       value:
-        orders.filter(
+        (orders ?? []).filter(
           (order) =>
             ![
               "delivered",
@@ -62,7 +62,7 @@ export default function FoodStats({
         "Delivered",
 
       value:
-        orders.filter(
+        (orders ?? []).filter(
           (order) =>
             order.status ===
             "delivered",

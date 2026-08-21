@@ -32,7 +32,7 @@ export default function DriversPage() {
 
   const [
     region,
-    setRegion,
+    setMarket,
   ] = useState("all");
 
   const filtered =
@@ -42,7 +42,7 @@ export default function DriversPage() {
           .trim()
           .toLowerCase();
 
-      return drivers.filter(
+      return (drivers ?? []).filter(
         (driver) => {
           const matchesSearch =
             !query ||
@@ -64,7 +64,7 @@ export default function DriversPage() {
             driver.status ===
               status;
 
-          const matchesRegion =
+          const matchesMarket =
             region === "all" ||
             driver.region ===
               region;
@@ -72,7 +72,7 @@ export default function DriversPage() {
           return (
             matchesSearch &&
             matchesStatus &&
-            matchesRegion
+            matchesMarket
           );
         },
       );
@@ -153,22 +153,18 @@ export default function DriversPage() {
           onChange={(
             event,
           ) =>
-            setRegion(
+            setMarket(
               event.target.value,
             )
           }
           className="safari-input"
         >
           <option value="all">
-            All Regions
+            Pakistan
           </option>
 
           <option value="Pakistan">
             Pakistan
-          </option>
-
-          <option value="Germany">
-            Germany
           </option>
         </select>
       </div>

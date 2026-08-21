@@ -32,7 +32,7 @@ export default function PassengersPage() {
 
   const [
     region,
-    setRegion,
+    setMarket,
   ] = useState("all");
 
   const filtered =
@@ -42,7 +42,7 @@ export default function PassengersPage() {
           .trim()
           .toLowerCase();
 
-      return passengers.filter(
+      return (passengers ?? []).filter(
         (passenger) => {
           const searchMatch =
             !query ||
@@ -156,22 +156,18 @@ export default function PassengersPage() {
           onChange={(
             event,
           ) =>
-            setRegion(
+            setMarket(
               event.target.value,
             )
           }
           className="safari-input"
         >
           <option value="all">
-            All Regions
+            Pakistan
           </option>
 
           <option value="Pakistan">
             Pakistan
-          </option>
-
-          <option value="Germany">
-            Germany
           </option>
         </select>
       </div>

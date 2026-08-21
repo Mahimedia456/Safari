@@ -68,7 +68,7 @@ export default function PharmacyPromotionsPage() {
             </thead>
 
             <tbody>
-              {promotions.map(
+              {(promotions ?? []).map(
                 (promotion) => (
                   <tr
                     key={

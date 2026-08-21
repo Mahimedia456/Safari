@@ -75,7 +75,7 @@ export default function PharmacyPrescriptionTable({
           </thead>
 
           <tbody>
-            {prescriptions.map(
+            {(prescriptions ?? []).map(
               (prescription) => (
                 <tr
                   key={

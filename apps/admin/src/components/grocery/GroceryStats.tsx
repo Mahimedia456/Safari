@@ -32,7 +32,7 @@ export default function GroceryStats({
       );
 
   const lowStock =
-    products.filter(
+    (products ?? []).filter(
       (product) =>
         product.stock <=
         product.lowStockThreshold,
@@ -55,7 +55,7 @@ export default function GroceryStats({
         "Active Orders",
 
       value:
-        orders.filter(
+        (orders ?? []).filter(
           (order) =>
             ![
               "delivered",

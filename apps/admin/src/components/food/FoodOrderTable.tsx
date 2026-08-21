@@ -64,7 +64,7 @@ export default function FoodOrderTable({
           </thead>
 
           <tbody>
-            {orders.map(
+            {(orders ?? []).map(
               (order) => (
                 <tr
                   key={

@@ -15,7 +15,7 @@ export default function PassengerPointsTable({
             <tr>
               {[
                 "Passenger",
-                "Region",
+                "Market",
                 "Available",
                 "Lifetime Earned",
                 "Redeemed",
@@ -32,7 +32,7 @@ export default function PassengerPointsTable({
           </thead>
 
           <tbody>
-            {passengers.map((passenger) => (
+            {(passengers ?? []).map((passenger) => (
               <tr
                 key={passenger.passengerId}
                 className="border-b border-slate-100 last:border-0 dark:border-white/[0.05]"

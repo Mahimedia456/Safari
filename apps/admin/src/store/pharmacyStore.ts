@@ -1,16 +1,12 @@
-import {
-  create,
-} from "zustand";
+import { create } from "zustand";
 
 import {
-  dummyPharmacyCategories,
-  dummyPharmacyLicense,
-  dummyPharmacyOrders,
-  dummyPharmacyPrescriptions,
-  dummyPharmacyProducts,
-  dummyPharmacyPromotions,
-  dummyPharmacyRefunds,
-} from "../data/pharmacy";
+  adminCommerceService,
+} from "../services/commerceService";
+
+import {
+  useAuthStore,
+} from "./authStore";
 
 import type {
   PharmacyCategory,
@@ -24,205 +20,245 @@ import type {
   PrescriptionStatus,
 } from "../types/pharmacy";
 
-interface PharmacyState {
+type PharmacyState = {
+  loading: boolean;
+  loaded: boolean;
+  error: string | null;
+
   orders: PharmacyOrder[];
-
   products: PharmacyProduct[];
-
   categories: PharmacyCategory[];
-
   prescriptions: PharmacyPrescription[];
-
-  license: PharmacyLicense;
-
+  license: PharmacyLicense | null;
   promotions: PharmacyPromotion[];
-
   refunds: PharmacyRefund[];
+
+  load: () => Promise<void>;
 
   setOrderStatus: (
     orderId: string,
     status: PharmacyOrderStatus,
-  ) => void;
+  ) => Promise<void>;
 
-  toggleProductAvailability: (
-    productId: string,
-  ) => void;
-
-  updateStock: (
-    productId: string,
-    stock: number,
-  ) => void;
-
-  toggleCategory: (
-    categoryId: string,
-  ) => void;
-
+  toggleProductAvailability: (productId: string) => void;
+  updateStock: (productId: string, stock: number) => void;
+  toggleCategory: (categoryId: string) => void;
   setPrescriptionStatus: (
     prescriptionId: string,
     status: PrescriptionStatus,
     notes?: string,
   ) => void;
-
-  togglePromotion: (
-    promotionId: string,
-  ) => void;
-
+  togglePromotion: (promotionId: string) => void;
   setRefundStatus: (
     refundId: string,
-    status:
-      | "approved"
-      | "rejected",
+    status: "approved" | "rejected",
   ) => void;
+};
+
+function token() {
+  const value =
+    useAuthStore.getState()
+      .accessToken;
+
+  if (!value) {
+    throw new Error(
+      "Safari admin session is required.",
+    );
+  }
+
+  return value;
+}
+
+function normalizeStatus(
+  value: string,
+): PharmacyOrderStatus {
+  if (
+    value === "preparing"
+  ) {
+    return "processing";
+  }
+
+  if (
+    value ===
+    "ready_for_pickup"
+  ) {
+    return "ready";
+  }
+
+  if (
+    value.startsWith(
+      "cancelled",
+    )
+  ) {
+    return "cancelled";
+  }
+
+  return value as PharmacyOrderStatus;
 }
 
 export const usePharmacyStore =
-  create<PharmacyState>((set) => ({
-    orders: dummyPharmacyOrders,
+  create<PharmacyState>((set, get) => ({
+    loading: false,
+    loaded: false,
+    error: null,
 
-    products: dummyPharmacyProducts,
+    orders: [],
+    products: [],
+    categories: [],
+    prescriptions: [],
+    license: null,
+    promotions: [],
+    refunds: [],
 
-    categories: dummyPharmacyCategories,
+    load: async () => {
+      set({
+        loading: true,
+        error: null,
+      });
 
-    prescriptions: dummyPharmacyPrescriptions,
+      try {
+        const [
+          ordersData,
+          storesData,
+        ] =
+          await Promise.all([
+            adminCommerceService.orders(
+              token(),
+              "pharmacy",
+            ),
+            adminCommerceService.stores(
+              token(),
+              "pharmacy",
+            ),
+          ]);
 
-    license: dummyPharmacyLicense,
+        const stores =
+          new Map(
+            (
+              storesData.stores ??
+              []
+            ).map(
+              (store) => [
+                store.id,
+                store.name,
+              ],
+            ),
+          );
 
-    promotions: dummyPharmacyPromotions,
-
-    refunds: dummyPharmacyRefunds,
-
-    setOrderStatus: (
-      orderId,
-      status,
-    ) => {
-      set((state) => ({
-        orders: state.orders.map(
-          (order) =>
-            order.id === orderId
-              ? {
-                  ...order,
-                  status,
-                }
-              : order,
-        ),
-      }));
-    },
-
-    toggleProductAvailability: (
-      productId,
-    ) => {
-      set((state) => ({
-        products: state.products.map(
-          (product) =>
-            product.id === productId
-              ? {
-                  ...product,
-                  available:
-                    !product.available,
-                }
-              : product,
-        ),
-      }));
-    },
-
-    updateStock: (
-      productId,
-      stock,
-    ) => {
-      set((state) => ({
-        products: state.products.map(
-          (product) =>
-            product.id === productId
-              ? {
-                  ...product,
-                  stock: Math.max(
+        const orders =
+          (
+            ordersData.orders ??
+            []
+          ).map(
+            (
+              order,
+            ): PharmacyOrder => ({
+              id:
+                order.id,
+              pharmacyId:
+                order.store_id,
+              pharmacyName:
+                stores.get(
+                  order.store_id,
+                ) ??
+                "Safari Pharmacy",
+              customerName:
+                order.passenger_id,
+              customerPhone:
+                "—",
+              status:
+                normalizeStatus(
+                  order.status,
+                ),
+              items: [],
+              subtotal:
+                Number(
+                  order.total ??
                     0,
-                    stock,
-                  ),
-                }
-              : product,
-        ),
-      }));
+                ),
+              deliveryFee:
+                0,
+              serviceFee:
+                0,
+              discount: 0,
+              total:
+                Number(
+                  order.total ??
+                    0,
+                ),
+              paymentMethod:
+                (
+                  order.payment_method ||
+                  "cash"
+                ) as PharmacyOrder["paymentMethod"],
+              deliveryAddress:
+                order.delivery_address ??
+                "—",
+              prescriptionId:
+                order.prescription_status &&
+                order.prescription_status !==
+                  "not_required"
+                  ? order.id
+                  : undefined,
+              createdAt:
+                order.created_at,
+            }),
+          );
+
+        set({
+          orders,
+          loaded: true,
+        });
+      } catch (error) {
+        set({
+          orders: [],
+          loaded: true,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Could not load Safari Pharmacy.",
+        });
+      } finally {
+        set({
+          loading: false,
+        });
+      }
     },
 
-    toggleCategory: (
-      categoryId,
-    ) => {
-      set((state) => ({
-        categories:
-          state.categories.map(
-            (category) =>
-              category.id ===
-              categoryId
-                ? {
-                    ...category,
-                    active:
-                      !category.active,
-                  }
-                : category,
-          ),
-      }));
-    },
+    setOrderStatus:
+      async (
+        orderId,
+        status,
+      ) => {
+        const apiStatus =
+          status ===
+          "processing"
+            ? "preparing"
+            : status ===
+                "ready"
+              ? "ready_for_pickup"
+              : status ===
+                  "cancelled"
+                ? "cancelled_by_admin"
+                : status;
 
-    setPrescriptionStatus: (
-      prescriptionId,
-      status,
-      notes,
-    ) => {
-      set((state) => ({
-        prescriptions:
-          state.prescriptions.map(
-            (prescription) =>
-              prescription.id ===
-              prescriptionId
-                ? {
-                    ...prescription,
+        await adminCommerceService.updateOrderStatus(
+          token(),
+          "pharmacy",
+          orderId,
+          {
+            status:
+              apiStatus as any,
+          },
+        );
 
-                    status,
+        await get().load();
+      },
 
-                    notes,
-
-                    reviewedAt:
-                      new Date().toISOString(),
-                  }
-                : prescription,
-          ),
-      }));
-    },
-
-    togglePromotion: (
-      promotionId,
-    ) => {
-      set((state) => ({
-        promotions:
-          state.promotions.map(
-            (promotion) =>
-              promotion.id ===
-              promotionId
-                ? {
-                    ...promotion,
-                    active:
-                      !promotion.active,
-                  }
-                : promotion,
-          ),
-      }));
-    },
-
-    setRefundStatus: (
-      refundId,
-      status,
-    ) => {
-      set((state) => ({
-        refunds: state.refunds.map(
-          (refund) =>
-            refund.id === refundId
-              ? {
-                  ...refund,
-                  status,
-                }
-              : refund,
-        ),
-      }));
-    },
+    toggleProductAvailability: () => undefined,
+    updateStock: () => undefined,
+    toggleCategory: () => undefined,
+    setPrescriptionStatus: () => undefined,
+    togglePromotion: () => undefined,
+    setRefundStatus: () => undefined,
   }));

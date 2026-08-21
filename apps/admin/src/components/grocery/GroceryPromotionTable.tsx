@@ -47,7 +47,7 @@ export default function GroceryPromotionTable({
           </thead>
 
           <tbody>
-            {promotions.map(
+            {(promotions ?? []).map(
               (promotion) => (
                 <tr
                   key={

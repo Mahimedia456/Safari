@@ -22,14 +22,14 @@ export default function PharmacyStats({
   prescriptions: PharmacyPrescription[];
 }) {
   const lowStock =
-    products.filter(
+    (products ?? []).filter(
       (product) =>
         product.stock <=
         product.lowStockThreshold,
     ).length;
 
   const pendingPrescriptions =
-    prescriptions.filter(
+    (prescriptions ?? []).filter(
       (item) =>
         item.status ===
         "pending",
@@ -44,7 +44,7 @@ export default function PharmacyStats({
 
     {
       label: "Active Orders",
-      value: orders.filter(
+      value: (orders ?? []).filter(
         (order) =>
           ![
             "delivered",

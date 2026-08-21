@@ -29,7 +29,7 @@ export default function MerchantStats({
       label: "Approved",
 
       value:
-        merchants.filter(
+        (merchants ?? []).filter(
           (merchant) =>
             merchant.status ===
             "approved",
@@ -43,7 +43,7 @@ export default function MerchantStats({
       label: "Pending",
 
       value:
-        merchants.filter(
+        (merchants ?? []).filter(
           (merchant) =>
             merchant.status ===
             "pending",
@@ -57,7 +57,7 @@ export default function MerchantStats({
         "Suspended / Rejected",
 
       value:
-        merchants.filter(
+        (merchants ?? []).filter(
           (merchant) =>
             merchant.status ===
               "suspended" ||

@@ -26,7 +26,7 @@ export default function TransactionsPage() {
   const [module, setModule] =
     useState("all");
 
-  const [region, setRegion] =
+  const [region, setMarket] =
     useState("all");
 
   const filtered =
@@ -36,7 +36,7 @@ export default function TransactionsPage() {
           .trim()
           .toLowerCase();
 
-      return transactions.filter(
+      return (transactions ?? []).filter(
         (transaction) => {
           const matchesSearch =
             !query ||
@@ -58,7 +58,7 @@ export default function TransactionsPage() {
             transaction.module ===
               module;
 
-          const matchesRegion =
+          const matchesMarket =
             region === "all" ||
             transaction.region ===
               region;
@@ -66,7 +66,7 @@ export default function TransactionsPage() {
           return (
             matchesSearch &&
             matchesModule &&
-            matchesRegion
+            matchesMarket
           );
         },
       );
@@ -149,22 +149,18 @@ export default function TransactionsPage() {
         <select
           value={region}
           onChange={(event) =>
-            setRegion(
+            setMarket(
               event.target.value,
             )
           }
           className="safari-input"
         >
           <option value="all">
-            All Regions
+            Pakistan
           </option>
 
           <option value="Pakistan">
             Pakistan
-          </option>
-
-          <option value="Germany">
-            Germany
           </option>
         </select>
       </div>

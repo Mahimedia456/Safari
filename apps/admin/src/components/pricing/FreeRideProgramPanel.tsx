@@ -7,7 +7,7 @@ import {
 } from "../../store/pricingStore";
 
 import type {
-  PricingRegion,
+  PricingMarket,
 } from "../../types/pricing";
 
 export default function FreeRideProgramPanel({
@@ -15,7 +15,7 @@ export default function FreeRideProgramPanel({
   canEdit,
 }: {
   region:
-    PricingRegion;
+    PricingMarket;
 
   canEdit: boolean;
 }) {

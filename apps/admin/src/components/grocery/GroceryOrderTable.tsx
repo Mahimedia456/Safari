@@ -66,7 +66,7 @@ export default function GroceryOrderTable({
           </thead>
 
           <tbody>
-            {orders.map(
+            {(orders ?? []).map(
               (order) => (
                 <tr
                   key={order.id}

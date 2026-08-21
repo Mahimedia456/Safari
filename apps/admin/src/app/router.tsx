@@ -142,7 +142,6 @@ import RideIncidentsPage from "../pages/rides/RideIncidentsPage";
 
 import PricingDashboardPage from "../pages/pricing/PricingDashboardPage";
 import PakistanPricingPage from "../pages/pricing/PakistanPricingPage";
-import GermanyPricingPage from "../pages/pricing/GermanyPricingPage";
 import DriverCommissionPage from "../pages/pricing/DriverCommissionPage";
 import FreeRideProgramPage from "../pages/pricing/FreeRideProgramPage";
 import SurgePricingPage from "../pages/pricing/SurgePricingPage";
@@ -218,7 +217,6 @@ import RegionDashboardPage from "../pages/regions/RegionDashboardPage";
 import RegionsPage from "../pages/regions/RegionsPage";
 import RegionDetailPage from "../pages/regions/RegionDetailPage";
 import PakistanRegionPage from "../pages/regions/PakistanRegionPage";
-import GermanyRegionPage from "../pages/regions/GermanyRegionPage";
 import RegionServicesPage from "../pages/regions/RegionServicesPage";
 import RegionRidesPage from "../pages/regions/RegionRidesPage";
 import RegionLocalizationPage from "../pages/regions/RegionLocalizationPage";
@@ -979,16 +977,6 @@ export const router =
         },
 
         {
-          path: "pricing/germany",
-
-          element: (
-            <RoleRouteGuard>
-              <GermanyPricingPage />
-            </RoleRouteGuard>
-          ),
-        },
-
-        {
           path: "pricing/surge",
 
           element: (
@@ -1476,17 +1464,6 @@ export const router =
           element: (
             <RoleRouteGuard>
               <PakistanRegionPage />
-            </RoleRouteGuard>
-          ),
-        },
-
-        {
-          path:
-            "regions/germany",
-
-          element: (
-            <RoleRouteGuard>
-              <GermanyRegionPage />
             </RoleRouteGuard>
           ),
         },

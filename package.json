@@ -3,14 +3,22 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "dev": "concurrently --names BACKEND,ADMIN,MOBILE \"npm run backend\" \"npm run admin\" \"npm run mobile\"",
+    "dev:all": "concurrently --names BACKEND,ADMIN,MOBILE,WEBSITE \"npm run backend\" \"npm run admin\" \"npm run mobile\" \"npm run website\"",
+
+    "backend": "npm --prefix backend run dev",
+    "admin": "npm --prefix apps/admin run dev",
+
     "mobile": "npm --prefix apps/mobile run start",
+    "mobile:clear": "npm --prefix apps/mobile run start -- --clear",
     "mobile:android": "npm --prefix apps/mobile run android",
     "mobile:web": "npm --prefix apps/mobile run web",
-    "backend": "npm --prefix backend run dev",
-    "admin": "npm --prefix apps/admin run dev"
+
+    "website": "npm --prefix apps/website run dev"
   },
   "devDependencies": {
     "autoprefixer": "^10.5.4",
+    "concurrently": "^9.2.1",
     "postcss": "^8.5.23",
     "tailwindcss": "^3.4.14"
   }

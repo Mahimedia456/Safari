@@ -74,7 +74,7 @@ export default function PharmacyRefundsPage() {
             </thead>
 
             <tbody>
-              {refunds.map(
+              {(refunds ?? []).map(
                 (refund) => (
                   <tr
                     key={

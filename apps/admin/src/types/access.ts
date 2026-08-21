@@ -81,7 +81,7 @@ export interface AdminUser {
   regionScope:
     | "all"
     | "Pakistan"
-    | "Germany";
+    | "Pakistan";
 
   lastLoginAt?: string;
 

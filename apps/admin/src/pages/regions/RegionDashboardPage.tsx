@@ -6,12 +6,12 @@ import RegionStats from "../../components/regions/RegionStats";
 import RegionTable from "../../components/regions/RegionTable";
 
 import {
-  useRegionStore,
+  useMarketStore,
 } from "../../store/regionStore";
 
 export default function RegionDashboardPage() {
   const regions =
-    useRegionStore(
+    useMarketStore(
       (state) =>
         state.regions,
     );
@@ -21,17 +21,15 @@ export default function RegionDashboardPage() {
       <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-sm font-semibold text-safari-600 dark:text-safari-400">
-            Safari Global
+            Safari Pakistan
           </div>
 
           <h1 className="mt-1 text-3xl font-bold text-slate-950 dark:text-white">
-            Region Management
+            Pakistan Operations
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Configure Safari
-            availability and operational
-            behavior by country.
+            Manage Safari availability and operational behavior for Pakistan.
           </p>
         </div>
 
@@ -39,7 +37,7 @@ export default function RegionDashboardPage() {
           to="/regions"
           className="safari-secondary-button"
         >
-          All Regions
+          Pakistan
         </Link>
       </div>
 

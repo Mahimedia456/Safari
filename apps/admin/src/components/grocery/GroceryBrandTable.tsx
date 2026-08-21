@@ -35,7 +35,7 @@ export default function GroceryBrandTable({
         </thead>
 
         <tbody>
-          {brands.map(
+          {(brands ?? []).map(
             (brand) => (
               <tr
                 key={

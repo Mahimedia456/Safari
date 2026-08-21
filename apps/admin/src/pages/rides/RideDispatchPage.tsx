@@ -29,7 +29,7 @@ export default function RideDispatchPage() {
     );
 
   const unassigned =
-    rides.filter(
+    (rides ?? []).filter(
       (ride) =>
         !ride.driverId &&
         [

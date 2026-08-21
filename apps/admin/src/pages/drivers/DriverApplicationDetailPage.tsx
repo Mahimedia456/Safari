@@ -139,7 +139,7 @@ export default function DriverApplicationDetailPage() {
 
             <Info
               icon={MapPin}
-              label="Region"
+              label="Market"
               value={`${application.city}, ${application.region}`}
             />
 

@@ -48,7 +48,7 @@ export default function ServicesStats({
         "Active",
 
       value:
-        bookings.filter(
+        (bookings ?? []).filter(
           (item) =>
             ![
               "completed",
@@ -67,7 +67,7 @@ export default function ServicesStats({
         "Completed",
 
       value:
-        bookings.filter(
+        (bookings ?? []).filter(
           (item) =>
             item.status ===
             "completed",
@@ -82,7 +82,7 @@ export default function ServicesStats({
         "Active Staff",
 
       value:
-        staff.filter(
+        (staff ?? []).filter(
           (item) =>
             item.active,
         ).length,

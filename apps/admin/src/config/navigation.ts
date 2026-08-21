@@ -157,11 +157,7 @@ const adminNavigation: NavigationSection[] = [
         icon: SlidersHorizontal,
       },
 
-      {
-        label: "Germany Pricing",
-        path: "/pricing/germany",
-        icon: SlidersHorizontal,
-      },
+      
 
       {
         label: "Surge Pricing",
@@ -443,17 +439,17 @@ const adminNavigation: NavigationSection[] = [
   },
 
   {
-    title: "Region Management",
+    title: "Market Management",
 
     items: [
       {
-        label: "Region Dashboard",
+        label: "Market Dashboard",
         path: "/regions/dashboard",
         icon: Globe2,
       },
 
       {
-        label: "All Regions",
+        label: "Pakistan",
         path: "/regions",
         icon: Map,
       },
@@ -464,11 +460,7 @@ const adminNavigation: NavigationSection[] = [
         icon: Globe2,
       },
 
-      {
-        label: "Germany",
-        path: "/regions/de",
-        icon: Globe2,
-      },
+      
 
       {
         label: "PK Localization",
@@ -477,7 +469,7 @@ const adminNavigation: NavigationSection[] = [
       },
 
       {
-        label: "Regional Support",
+        label: "Marketal Support",
         path: "/regions/pk/support",
         icon: LifeBuoy,
       },
@@ -1223,17 +1215,17 @@ const operationsNavigation: NavigationSection[] = [
   },
 
   {
-    title: "Regions",
+    title: "Markets",
 
     items: [
       {
-        label: "Region Overview",
+        label: "Market Overview",
         path: "/regions/dashboard",
         icon: Globe2,
       },
 
       {
-        label: "All Regions",
+        label: "Pakistan",
         path: "/regions",
         icon: Map,
       },
@@ -1244,11 +1236,7 @@ const operationsNavigation: NavigationSection[] = [
         icon: Globe2,
       },
 
-      {
-        label: "Germany",
-        path: "/regions/de",
-        icon: Globe2,
-      },
+      
     ],
   },
 
@@ -1352,11 +1340,7 @@ const financeNavigation: NavigationSection[] = [
         icon: SlidersHorizontal,
       },
 
-      {
-        label: "Germany Pricing",
-        path: "/pricing/germany",
-        icon: SlidersHorizontal,
-      },
+      
 
       {
         label: "Driver Commission",
@@ -1403,11 +1387,11 @@ const financeNavigation: NavigationSection[] = [
   },
 
   {
-    title: "Regions",
+    title: "Markets",
 
     items: [
       {
-        label: "All Regions",
+        label: "Pakistan",
         path: "/regions",
         icon: Globe2,
       },
@@ -1529,11 +1513,11 @@ const supportNavigation: NavigationSection[] = [
   },
 
   {
-    title: "Regional Support",
+    title: "Marketal Support",
 
     items: [
       {
-        label: "Regions",
+        label: "Markets",
         path: "/regions",
         icon: Globe2,
       },
@@ -1544,11 +1528,7 @@ const supportNavigation: NavigationSection[] = [
         icon: LifeBuoy,
       },
 
-      {
-        label: "Germany Support",
-        path: "/regions/de/support",
-        icon: LifeBuoy,
-      },
+      
     ],
   },
 ];
@@ -1557,7 +1537,7 @@ const supportNavigation: NavigationSection[] = [
    EXPORT
 ====================================================== */
 
-export function getNavigationForRole(
+function getRawNavigationForRole(
   role: AccountRole,
 ): NavigationSection[] {
   switch (role) {
@@ -1589,6 +1569,114 @@ export function getNavigationForRole(
     default:
       return [];
   }
+}
+
+
+export function getNavigationForRole(
+  role: AccountRole,
+): NavigationSection[] {
+  return getRawNavigationForRole(role)
+    .map((section) => {
+      const seen =
+        new Set<string>();
+
+      const items =
+        section.items.filter(
+          (item) => {
+            if (
+              seen.has(item.path)
+            ) {
+              return false;
+            }
+
+            seen.add(item.path);
+            return true;
+          },
+        );
+
+      return {
+        ...section,
+        items,
+      };
+    })
+    .filter(
+      (section) =>
+        section.items.length > 0,
+    );
+}
+
+export function getSidebarNavigationForRole(
+  role: AccountRole,
+): NavigationSection[] {
+  return getNavigationForRole(role)
+    .map((section) => ({
+      title: section.title,
+      items: section.items.slice(0, 1),
+    }))
+    .filter((section) => section.items.length > 0);
+}
+
+export function getContextNavigationForRole(
+  role: AccountRole,
+  pathname: string,
+): NavigationSection | null {
+  const sections =
+    getNavigationForRole(role);
+
+  let winner:
+    NavigationSection | null =
+    null;
+
+  let winnerScore = -1;
+
+  for (const section of sections) {
+    const score =
+      Math.max(
+        ...section.items.map(
+          (item) => {
+            if (item.path === "/") {
+              return pathname === "/"
+                ? 1000
+                : -1;
+            }
+
+            if (
+              pathname === item.path ||
+              pathname.startsWith(
+                `${item.path}/`,
+              )
+            ) {
+              return item.path.length;
+            }
+
+            const root =
+              item.path
+                .split("/")
+                .filter(Boolean)[0];
+
+            if (
+              root &&
+              pathname.startsWith(
+                `/${root}`,
+              )
+            ) {
+              return root.length;
+            }
+
+            return -1;
+          },
+        ),
+      );
+
+    if (score > winnerScore) {
+      winner = section;
+      winnerScore = score;
+    }
+  }
+
+  return winnerScore >= 0
+    ? winner
+    : null;
 }
 
 export function getAllowedPathsForRole(

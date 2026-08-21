@@ -216,7 +216,7 @@ export default function RegisterPage() {
     setError("");
   };
 
-  const handleSubmit = (
+  const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
@@ -266,7 +266,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     const result =
-      register({
+      await register({
         fullName,
         email,
         password,

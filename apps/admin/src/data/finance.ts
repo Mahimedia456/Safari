@@ -92,8 +92,8 @@ export const dummyFinanceTransactions: FinanceTransaction[] = [
   {
     id: "TXN-10004",
 
-    region: "Germany",
-    currency: "EUR",
+    region: "Pakistan",
+    currency: "PKR",
 
     module: "ride",
     type: "payment",
@@ -330,8 +330,8 @@ export const dummyFinancePayouts: FinancePayout[] = [
   {
     id: "PAY-DRV-1002",
 
-    region: "Germany",
-    currency: "EUR",
+    region: "Pakistan",
+    currency: "PKR",
 
     recipientId: "DRV-1003",
     recipientName: "Jonas Weber",
@@ -502,8 +502,8 @@ export const dummyWalletLedger: WalletLedgerEntry[] = [
   {
     id: "WL-1003",
 
-    region: "Germany",
-    currency: "EUR",
+    region: "Pakistan",
+    currency: "PKR",
 
     ownerId: "PASS-1003",
     ownerName: "Daniel Weber",
@@ -576,8 +576,8 @@ export const dummySettlements: SettlementRecord[] = [
   {
     id: "SET-2026-07-DE-DRV",
 
-    region: "Germany",
-    currency: "EUR",
+    region: "Pakistan",
+    currency: "PKR",
 
     period: "July 2026",
 

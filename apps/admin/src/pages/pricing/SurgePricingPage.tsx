@@ -45,7 +45,7 @@ export default function SurgePricingPage() {
         />
 
         <SurgeSettingsPanel
-          region="Germany"
+          region="Pakistan"
           canEdit={
             permissions.editSurge
           }

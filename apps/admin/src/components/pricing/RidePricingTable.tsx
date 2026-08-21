@@ -3,13 +3,13 @@ import {
 } from "../../store/pricingStore";
 
 import type {
-  PricingRegion,
+  PricingMarket,
   RidePricingRule,
 } from "../../types/pricing";
 
 type Props = {
   region:
-    PricingRegion;
+    PricingMarket;
 
   canEdit: boolean;
 };

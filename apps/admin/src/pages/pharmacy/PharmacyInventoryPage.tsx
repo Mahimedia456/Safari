@@ -43,7 +43,7 @@ export default function PharmacyInventoryPage() {
         return products;
       }
 
-      return products.filter(
+      return (products ?? []).filter(
         (product) =>
           product.stock <=
           product.lowStockThreshold,

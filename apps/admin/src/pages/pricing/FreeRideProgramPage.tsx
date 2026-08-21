@@ -45,7 +45,7 @@ export default function FreeRideProgramPage() {
         />
 
         <FreeRideProgramPanel
-          region="Germany"
+          region="Pakistan"
           canEdit={
             permissions.editFreeRideProgram
           }

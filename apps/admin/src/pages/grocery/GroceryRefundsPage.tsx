@@ -76,7 +76,7 @@ export default function GroceryRefundsPage() {
             </thead>
 
             <tbody>
-              {refunds.map(
+              {(refunds ?? []).map(
                 (refund) => (
                   <tr
                     key={

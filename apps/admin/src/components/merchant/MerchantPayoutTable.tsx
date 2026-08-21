@@ -40,8 +40,8 @@ export default function MerchantPayoutTable({
               (payout) => {
                 const symbol =
                   payout.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

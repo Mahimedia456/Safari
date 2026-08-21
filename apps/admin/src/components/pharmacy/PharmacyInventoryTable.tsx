@@ -51,7 +51,7 @@ export default function PharmacyInventoryTable({
           </thead>
 
           <tbody>
-            {products.map(
+            {(products ?? []).map(
               (product) => {
                 const low =
                   product.stock <=

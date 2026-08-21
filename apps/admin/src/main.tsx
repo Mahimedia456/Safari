@@ -21,7 +21,7 @@ useThemeStore
   .getState()
   .initializeTheme();
 
-useAuthStore
+void useAuthStore
   .getState()
   .initializeAuth();
 

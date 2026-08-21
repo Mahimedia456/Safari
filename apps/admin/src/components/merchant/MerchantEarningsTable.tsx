@@ -40,8 +40,8 @@ export default function MerchantEarningsTable({
               (entry) => {
                 const symbol =
                   entry.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

@@ -20,10 +20,10 @@ export default function PassengerSupportPage() {
     );
 
   const cases =
-    usePassengerStore(
+    (usePassengerStore(
       (state) =>
         state.supportCases,
-    );
+    ) ?? []);
 
   if (!user) {
     return null;

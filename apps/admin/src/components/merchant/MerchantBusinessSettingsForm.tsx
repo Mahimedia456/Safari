@@ -153,7 +153,7 @@ export default function MerchantBusinessSettingsForm({
           />
 
           <Info
-            label="Region"
+            label="Market"
             value={
               profile.region
             }

@@ -41,8 +41,8 @@ export default function WalletLedgerTable({
               (entry) => {
                 const symbol =
                   entry.currency ===
-                  "EUR"
-                    ? "€"
+                  "PKR"
+                    ? "Rs "
                     : "Rs ";
 
                 return (

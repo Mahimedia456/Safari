@@ -18,7 +18,7 @@ type FormValues = {
   regionScope:
     | "all"
     | "Pakistan"
-    | "Germany";
+    | "Pakistan";
 };
 
 type Props = {
@@ -161,7 +161,7 @@ export default function AdminUserForm({
 
         <label>
           <span className="text-xs font-semibold text-slate-500">
-            Region Scope
+            Market Scope
           </span>
 
           <select
@@ -178,15 +178,11 @@ export default function AdminUserForm({
             className="safari-input mt-2"
           >
             <option value="all">
-              All Regions
+              Pakistan
             </option>
 
             <option value="Pakistan">
               Pakistan
-            </option>
-
-            <option value="Germany">
-              Germany
             </option>
           </select>
         </label>
