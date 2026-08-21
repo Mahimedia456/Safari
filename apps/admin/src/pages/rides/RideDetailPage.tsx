@@ -316,10 +316,7 @@ export default function RideDetailPage() {
                   !cancellationReason.trim()
                 }
                 onClick={() => {
-                  cancelRide(
-                    ride.id,
-                    cancellationReason.trim(),
-                  );
+                  cancelRide(ride.id);
 
                   setCancellationReason(
                     "",

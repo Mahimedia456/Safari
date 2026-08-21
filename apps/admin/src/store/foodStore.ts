@@ -152,8 +152,24 @@ export const useFoodStore =
                     ?.name ??
                   "Safari Food",
                 customerName:
-                  order.passenger_id,
+                  usePassengerStore
+                    .getState()
+                    .passengers
+                    .find(
+                      (passenger) =>
+                        passenger.id === order.passenger_id,
+                    )
+                    ?.fullName ??
+                  "Safari Passenger",
                 customerPhone:
+                  usePassengerStore
+                    .getState()
+                    .passengers
+                    .find(
+                      (passenger) =>
+                        passenger.id === order.passenger_id,
+                    )
+                    ?.phone ??
                   "—",
                 status:
                   normalizeStatus(

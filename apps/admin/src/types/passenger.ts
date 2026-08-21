@@ -1,5 +1,6 @@
 export type PassengerStatus =
   | "pending"
+  | "inactive"
   | "active"
   | "suspended"
   | "blocked";
@@ -59,15 +60,19 @@ export type Passenger = {
 export type PassengerRide = {
   id: string;
   passengerId: string;
+  driverName?: string;
   status: string;
+  rideType?: string;
   pickup: string;
   destination: string;
   amount: number;
+  currency?: "PKR" | string;
   createdAt: string;
 };
 
 export type PassengerFlagStatus =
   | "open"
+  | "reviewing"
   | "investigating"
   | "resolved";
 

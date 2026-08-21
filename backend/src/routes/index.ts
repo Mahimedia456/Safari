@@ -1,4 +1,3 @@
-import { whatsappWebhookRouter } from "../modules/whatsapp/whatsapp-webhook.routes.js";
 import { Router } from "express";
 import { authRouter } from "../modules/auth/auth.routes.js";
 import { profileRouter } from "../modules/profiles/profile.routes.js";
@@ -67,5 +66,3 @@ apiRouter.use("/admin/notifications", adminNotificationsRouter);
 apiRouter.use("/storage", storageRouter);
 apiRouter.use("/admin/analytics", adminAnalyticsRouter);
 apiRouter.use("/system", systemRouter);
-
-apiRouter.use("/webhooks", whatsappWebhookRouter);

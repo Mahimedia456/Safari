@@ -8,6 +8,14 @@ export type FoodOrderStatus =
   | "delivered"
   | "cancelled";
 
+export type FoodOrderItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  addons?: string[];
+};
+
 export type FoodOrder = {
   id: string;
   restaurantId: string;
@@ -15,12 +23,7 @@ export type FoodOrder = {
   customerName: string;
   customerPhone: string;
   status: FoodOrderStatus;
-  items: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-  }>;
+  items: FoodOrderItem[];
   subtotal: number;
   deliveryFee: number;
   serviceFee: number;
@@ -44,8 +47,12 @@ export type FoodMenuItem = {
   restaurantId: string;
   categoryId: string;
   name: string;
+  description?: string;
   price: number;
   available: boolean;
+  preparationMinutes?: number;
+  addons: string[];
+  variants: string[];
 };
 
 export type FoodPromotion = {
@@ -54,11 +61,16 @@ export type FoodPromotion = {
   title: string;
   code: string;
   active: boolean;
+  discountType?: "percentage" | "fixed";
+  discountValue?: number;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type FoodRefund = {
   id: string;
   orderId: string;
+  restaurantId?: string;
   amount: number;
   reason: string;
   status: "pending" | "approved" | "rejected";
@@ -87,10 +99,7 @@ export type AdminFoodOrder = {
   delivery_address: string;
   customer_note: string | null;
   created_at: string;
-  food_restaurants?: {
-    id: string;
-    name: string;
-  };
+  food_restaurants?: { id: string; name: string };
 };
 
 export type AdminFoodRestaurant = {

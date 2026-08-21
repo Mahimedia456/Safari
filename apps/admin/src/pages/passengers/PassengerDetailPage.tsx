@@ -30,9 +30,6 @@ import {
   usePassengerStore,
 } from "../../store/passengerStore";
 
-import type {
-  PassengerStatus,
-} from "../../types/passenger";
 
 export default function PassengerDetailPage() {
   const {
@@ -89,13 +86,13 @@ export default function PassengerDetailPage() {
       user.role,
     );
 
-  const statuses: PassengerStatus[] =
-    [
-      "active",
-      "inactive",
-      "suspended",
-      "blocked",
-    ];
+  const statuses: Array<
+    "active" | "suspended" | "blocked"
+  > = [
+    "active",
+    "suspended",
+    "blocked",
+  ];
 
   return (
     <div>
@@ -161,8 +158,10 @@ export default function PassengerDetailPage() {
             ) =>
               setStatus(
                 passenger.id,
-                event.target
-                  .value as PassengerStatus,
+                event.target.value as
+                  | "active"
+                  | "suspended"
+                  | "blocked",
               )
             }
             className="safari-select"
@@ -222,7 +221,7 @@ export default function PassengerDetailPage() {
               }
               label="Referral Code"
               value={
-                passenger.referralCode
+                passenger.referralCode ?? "—"
               }
             />
 

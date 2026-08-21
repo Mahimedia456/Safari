@@ -264,7 +264,7 @@ export const useServicesStore =
         const apiStatus =
           status ===
           "pending"
-            ? "requested"
+            ? "confirmed"
             : status ===
                 "assigned"
               ? "professional_assigned"

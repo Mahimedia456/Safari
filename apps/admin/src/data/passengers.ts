@@ -263,7 +263,7 @@ export const dummyPassengers: Passenger[] = [
         label: "Home",
 
         address:
-          "Alexanderplatz, Berlin",
+          "Clifton, Karachi",
 
         city: "Berlin",
 
@@ -362,7 +362,7 @@ export const dummyPassengers: Passenger[] = [
     id: "PASS-1005",
 
     region: "Pakistan",
-    city: "Hamburg",
+    city: "Karachi",
 
     fullName:
       "Sophie Müller",
@@ -483,10 +483,10 @@ export const dummyPassengerRides: PassengerRide[] = [
       "PASS-1003",
 
     pickup:
-      "Alexanderplatz, Berlin",
+      "Clifton, Karachi",
 
     destination:
-      "Berlin Brandenburg Airport",
+      "Jinnah International Airport",
 
     status: "cancelled",
 

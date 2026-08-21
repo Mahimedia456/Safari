@@ -1629,16 +1629,21 @@ async function seedPhase1618() {
     if (result.error) throw result.error;
   }
 
-  const ridesCreated = rideRows.data.length;
-  const ridesCompleted = rideRows.data.filter(
+  const rideData = rideRows.data ?? [];
+  const foodData = foodRows.data ?? [];
+  const commerceData = commerceRows.data ?? [];
+  const serviceData = serviceRows.data ?? [];
+
+  const ridesCreated = rideData.length;
+  const ridesCompleted = rideData.filter(
     (ride) => ride.ride_status === "completed",
   ).length;
 
-  const ridesCancelled = rideRows.data.filter(
+  const ridesCancelled = rideData.filter(
     (ride) => String(ride.ride_status).startsWith("cancelled"),
   ).length;
 
-  const rideGmv = rideRows.data
+  const rideGmv = rideData
     .filter((ride) => ride.ride_status === "completed")
     .reduce(
       (sum, ride) =>
@@ -1646,26 +1651,26 @@ async function seedPhase1618() {
       0,
     );
 
-  const foodOrders = foodRows.data.length;
-  const foodGmv = foodRows.data
+  const foodOrders = foodData.length;
+  const foodGmv = foodData
     .filter((order) => order.status === "delivered")
     .reduce((sum, order) => sum + Number(order.total ?? 0), 0);
 
-  const groceryOrders = commerceRows.data.filter(
+  const groceryOrders = commerceData.filter(
     (order) => order.order_type === "grocery",
   ).length;
 
-  const pharmacyOrders = commerceRows.data.filter(
+  const pharmacyOrders = commerceData.filter(
     (order) => order.order_type === "pharmacy",
   ).length;
 
-  const commerceGmv = commerceRows.data
+  const commerceGmv = commerceData
     .filter((order) => order.status === "delivered")
     .reduce((sum, order) => sum + Number(order.total ?? 0), 0);
 
-  const serviceBookings = serviceRows.data.length;
+  const serviceBookings = serviceData.length;
 
-  const servicesGmv = serviceRows.data
+  const servicesGmv = serviceData
     .filter((booking) => booking.booking_status === "completed")
     .reduce(
       (sum, booking) =>

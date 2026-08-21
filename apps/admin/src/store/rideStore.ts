@@ -8,6 +8,8 @@ import type {
   AdminRide,
   Ride,
   RideCatalogAdminData,
+  RideIncident,
+  RideIncidentStatus,
 } from "../types/ride";
 
 import {
@@ -30,7 +32,7 @@ type RideState = {
   catalog: RideCatalogAdminData | null;
   rides: Ride[];
   total: number;
-  incidents: Array<Record<string, unknown>>;
+  incidents: RideIncident[];
 
   loadCatalog: () => Promise<void>;
 
@@ -51,7 +53,7 @@ type RideState = {
 
   setIncidentStatus: (
     incidentId: string,
-    status: string,
+    status: RideIncidentStatus,
   ) => void;
 
   updatePricing: (

@@ -592,7 +592,6 @@ function DashboardHeading({
   eyebrow,
   title,
   description,
-  showMarket = false,
 }: {
   eyebrow: string;
 

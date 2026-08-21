@@ -27,6 +27,7 @@ import type {
   DriverVerificationStatus,
 } from "../../types/driver";
 
+
 export default function DriverVehicleDetailPage() {
   const {
     vehicleId,
@@ -233,7 +234,7 @@ export default function DriverVehicleDetailPage() {
                     setRegistration(
                       vehicle.id,
                       event.target
-                        .value as DriverVerificationStatus,
+                        .value as "verified" | "rejected",
                     )
                   }
                   className="safari-select mt-3"
@@ -280,7 +281,7 @@ export default function DriverVehicleDetailPage() {
                     setInsurance(
                       vehicle.id,
                       event.target
-                        .value as DriverVerificationStatus,
+                        .value as "verified" | "rejected",
                     )
                   }
                   className="safari-select mt-3"

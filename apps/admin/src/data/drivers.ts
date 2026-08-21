@@ -560,17 +560,17 @@ export const dummyDriverApplications: DriverApplication[] = [
       "DRV-2003",
 
     applicantName:
-      "Lukas Schneider",
+      "Hamza Ali",
 
     email:
-      "lukas.schneider@example.de",
+      "hamza.ali@example.com",
 
     phone:
       "+92 151 99001122",
 
     region: "Pakistan",
 
-    city: "Hamburg",
+    city: "Karachi",
 
     status: "pending",
 

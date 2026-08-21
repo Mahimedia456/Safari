@@ -18,43 +18,19 @@ const envSchema = z.object({
   SUPABASE_PUBLISHABLE_KEY: z.string().min(10),
   SUPABASE_SECRET_KEY: z.string().min(10),
 
-  META_APP_ID: z.string().min(5),
-  META_WHATSAPP_PHONE_NUMBER_ID: z.string().min(5),
-  META_WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().min(5),
-  META_WHATSAPP_ACCESS_TOKEN: z.string().min(20),
-  META_WHATSAPP_VERIFY_TOKEN: z.string().min(12),
+  AUTH_OTP_PEPPER: z.string().min(16),
+  AUTH_RESET_TOKEN_PEPPER: z.string().min(16),
+  AUTH_OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+  AUTH_OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  AUTH_OTP_MAX_SENDS_PER_10_MINUTES: z.coerce.number().int().positive().default(5),
 
-  META_GRAPH_VERSION: z
-    .string()
-    .regex(/^v\d+\.\d+$/)
-    .default("v25.0"),
-
-  META_WHATSAPP_OTP_TEMPLATE: z.string().min(1),
-  META_WHATSAPP_OTP_TEMPLATE_LANGUAGE: z.string().min(2).default("en"),
-
-  AUTH_OTP_PEPPER: z.string().min(32),
-  AUTH_RESET_TOKEN_PEPPER: z.string().min(32),
-
-  AUTH_OTP_TTL_SECONDS: z.coerce
-    .number()
-    .int()
-    .min(60)
-    .max(900)
-    .default(300),
-
-  AUTH_OTP_MAX_ATTEMPTS: z.coerce
-    .number()
-    .int()
-    .min(3)
-    .max(10)
-    .default(5),
-
-  AUTH_OTP_MAX_SENDS_PER_10_MINUTES: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(10)
-    .default(5),
+  META_GRAPH_VERSION: z.string().default("v23.0"),
+  META_WHATSAPP_VERIFY_TOKEN: z.string().min(1),
+  META_WHATSAPP_ACCESS_TOKEN: z.string().min(1),
+  META_WHATSAPP_PHONE_NUMBER_ID: z.string().min(1),
+  META_WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().min(1).optional(),
+  META_WHATSAPP_OTP_TEMPLATE: z.string().default("carpool_text"),
+  META_WHATSAPP_OTP_TEMPLATE_LANGUAGE: z.string().default("en"),
 
   SEED_ADMIN_EMAIL: z
     .string()

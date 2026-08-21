@@ -17,14 +17,8 @@ export type AdminRide = {
   payment_method: string;
   payment_status: string;
   created_at: string;
-  ride_categories?: {
-    code: string;
-    name: string;
-  };
-  service_cities?: {
-    name: string;
-    city_code: string;
-  };
+  ride_categories?: { code: string; name: string };
+  service_cities?: { name: string; city_code: string };
 };
 
 export type RideCatalogAdminData = {
@@ -35,6 +29,13 @@ export type RideCatalogAdminData = {
   settings: Record<string, unknown>[];
 };
 
+export type RideTimelineEntry = {
+  id?: string;
+  status?: string;
+  title?: string;
+  description?: string;
+  createdAt?: string;
+};
 
 export type Ride = {
   id: string;
@@ -44,38 +45,56 @@ export type Ride = {
   driverId?: string | null;
   driverName?: string | null;
   driverPhone?: string | null;
+  vehicleId?: string | null;
   vehicleName?: string | null;
   vehiclePlate?: string | null;
   region: "Pakistan";
   city: string;
   status: string;
   rideType: string;
-  pickup: string;
-  destination: string;
+  pickup: any;
+  destination: any;
   distanceKm: number;
   estimatedDurationMinutes: number;
+  actualDurationMinutes?: number;
   estimatedFare: number;
   finalFare?: number | null;
   paymentMethod: string;
   scheduled: boolean;
-  timeline: Array<{
-    status: string;
-    createdAt: string;
-  }>;
-  createdAt: string;
+  scheduledAt?: string;
+  requestedAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  cancelledBy?: string;
+  cancellationReason?: string;
+  timeline: RideTimelineEntry[];
+  createdAt?: string;
 };
 
-
 export type RideStatus =
-  | "requested"
-  | "searching"
-  | "driver_assigned"
-  | "driver_arriving"
-  | "driver_arrived"
-  | "waiting"
-  | "in_progress"
-  | "completed"
-  | "cancelled"
-  | "cancelled_by_passenger"
-  | "cancelled_by_driver"
-  | "cancelled_by_admin";
+  | "requested" | "searching" | "driver_assigned" | "driver_arriving"
+  | "driver_arrived" | "waiting" | "in_progress" | "completed"
+  | "cancelled" | "cancelled_by_passenger" | "cancelled_by_driver" | "cancelled_by_admin";
+
+export type RideDriverOption = {
+  id: string;
+  name: string;
+  phone: string;
+  vehicle: string;
+  vehiclePlate: string;
+  rating: number;
+  distanceKm: number;
+  online: boolean;
+};
+
+export type RideIncidentStatus = "open" | "investigating" | "resolved";
+export type RideIncident = {
+  id: string;
+  rideId: string;
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high" | "critical";
+  status: RideIncidentStatus;
+  reportedBy: string;
+  createdAt?: string;
+};

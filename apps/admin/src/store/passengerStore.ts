@@ -39,7 +39,7 @@ type PassengerState = {
 
   setStatus: (
     passengerId: string,
-    status: "active" | "suspended" | "blocked",
+    status: import("../types/passenger").PassengerStatus,
   ) => Promise<void>;
 
   adjustWalletBalance: (
@@ -205,14 +205,17 @@ export const usePassengerStore =
       });
     },
 
-    setStatus: async (
-      passengerId,
-      status,
-    ) => {
-      await get().setPassengerStatus(
-        passengerId,
-        status,
-      );
+    setStatus: async (passengerId, status) => {
+      if (status === "active" || status === "suspended" || status === "blocked") {
+        await get().setPassengerStatus(passengerId, status);
+        return;
+      }
+
+      set({
+        passengers: get().passengers.map((item) =>
+          item.id === passengerId ? { ...item, status } : item,
+        ),
+      });
     },
 
     adjustWalletBalance: (

@@ -6,6 +6,9 @@ const classes: Record<
   PassengerStatus,
   string
 > = {
+  pending:
+    "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
+
   active:
     "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
 

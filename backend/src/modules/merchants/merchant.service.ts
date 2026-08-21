@@ -1,5 +1,21 @@
 import { supabaseAdmin } from "../../lib/supabase.js";
 
+type MerchantRelation =
+  | { merchant_user_id?: string | null }
+  | Array<{ merchant_user_id?: string | null }>
+  | null
+  | undefined;
+
+function relationMerchantUserId(
+  relation: MerchantRelation,
+): string | null {
+  if (Array.isArray(relation)) {
+    return relation[0]?.merchant_user_id ?? null;
+  }
+
+  return relation?.merchant_user_id ?? null;
+}
+
 export async function syncUnifiedOrderIndex() {
   const [
     foodResult,
@@ -88,7 +104,7 @@ export async function syncUnifiedOrderIndex() {
       order_number: order.order_number,
       customer_id: order.passenger_id,
       merchant_user_id:
-        order.food_restaurants?.merchant_user_id ?? null,
+        relationMerchantUserId(order.food_restaurants),
       status: order.status,
       currency_code: order.currency_code,
       total: order.total,
@@ -109,7 +125,7 @@ export async function syncUnifiedOrderIndex() {
       order_number: order.order_number,
       customer_id: order.passenger_id,
       merchant_user_id:
-        order.commerce_stores?.merchant_user_id ?? null,
+        relationMerchantUserId(order.commerce_stores),
       status: order.status,
       currency_code: order.currency_code,
       total: order.total,
@@ -130,7 +146,7 @@ export async function syncUnifiedOrderIndex() {
       order_number: booking.booking_number,
       customer_id: booking.customer_id,
       merchant_user_id:
-        booking.service_providers?.merchant_user_id ?? null,
+        relationMerchantUserId(booking.service_providers),
       status: booking.booking_status,
       currency_code: booking.currency_code,
       total:

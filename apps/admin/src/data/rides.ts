@@ -235,7 +235,7 @@ export const dummyRides: Ride[] = [
 
     pickup: {
       label:
-        "Alexanderplatz, Berlin",
+        "Clifton, Karachi",
 
       latitude: 52.5219,
 
@@ -244,7 +244,7 @@ export const dummyRides: Ride[] = [
 
     destination: {
       label:
-        "Berlin Brandenburg Airport",
+        "Jinnah International Airport",
 
       latitude: 52.3667,
 

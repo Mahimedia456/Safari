@@ -1,0 +1,20 @@
+SAFARI ADMIN V3 - IMPORTANT
+
+DO NOT merge this ZIP into your current src folder.
+
+Your current local src still contains stale files such as:
+- pages/pricing/GermanyPricingPage.tsx
+- lib/supabase.ts
+
+Those files are intentionally NOT present in this package.
+
+Use:
+  cd E:\Safari\apps\admin
+  Remove-Item -Recurse -Force src
+
+Then extract this ZIP and rename/place its extracted folder as:
+  E:\Safari\apps\admin\src
+
+Then:
+  npm install
+  npm run build

@@ -1,14 +1,36 @@
-export type MerchantType =
-  | "food"
-  | "grocery"
-  | "pharmacy"
-  | "services";
+export type MerchantType = "food" | "grocery" | "pharmacy" | "services";
+export type MerchantStatus = "pending" | "approved" | "rejected" | "suspended";
 
-export type MerchantStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "suspended";
+export type MerchantStore = {
+  id: string;
+  name: string;
+  type: MerchantType;
+  city: string;
+  country: "Pakistan";
+  status: string;
+  commissionPercentage: number;
+};
+
+export type MerchantDocument = {
+  id: string;
+  type: string;
+  name: string;
+  number?: string;
+  status: "pending" | "verified" | "rejected" | "expired" | string;
+  expiryDate?: string;
+};
+
+export type MerchantBankDetails = {
+  accountTitle: string;
+  bankName: string;
+  accountNumber: string;
+  iban?: string;
+  currency: string;
+  verified: boolean;
+};
+
+export type MerchantNote = { id: string; text: string; author: string; createdAt: string };
+export type MerchantActivity = { id: string; title: string; description: string; createdAt: string };
 
 export type AdminMerchant = {
   user_id: string;
@@ -32,11 +54,22 @@ export type Merchant = {
   city: string;
   country: "Pakistan";
   status: MerchantStatus;
+  address: string;
+  registeredAt: string;
+  approvedAt?: string | null;
   totalStores: number;
+  activeStores: number;
   totalOrders: number;
-  commissionPercent: number;
-  payoutStatus: string;
-  approvedAt: string | null;
+  grossSales: number;
+  commissionPercent?: number;
+  payoutStatus?: string;
+  stores: MerchantStore[];
+  documents: MerchantDocument[];
+  bankDetails: MerchantBankDetails;
+  notes: MerchantNote[];
+  activities: MerchantActivity[];
+  rejectionReason?: string | null;
+  suspensionReason?: string | null;
 };
 
 export type AdminUnifiedOrder = {

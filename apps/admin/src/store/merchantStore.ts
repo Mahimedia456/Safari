@@ -28,6 +28,8 @@ type MerchantState = {
   }) => Promise<void>;
 
   loadOrders: () => Promise<void>;
+  setStatus: (merchantId: string, status: MerchantStatus, reason?: string) => Promise<void>;
+  addNote: (merchantId: string, text: string, author: string) => void;
 };
 
 function token() {
@@ -285,6 +287,32 @@ export const useMerchantStore =
                   "—",
                 approvedAt:
                   merchant.approved_at,
+                address: firstStore?.address ?? "Pakistan",
+                registeredAt: merchant.approved_at ?? new Date().toISOString(),
+                activeStores: stores.length,
+                grossSales: 0,
+                stores: stores.map((store, index) => ({
+                  id: `${merchant.user_id}-${index + 1}`,
+                  name: store.name,
+                  type: merchant.merchant_type,
+                  city: inferCity(store.address),
+                  country: "Pakistan" as const,
+                  status: "active",
+                  commissionPercentage: Number(merchant.commission_percent ?? 0),
+                })),
+                documents: [],
+                bankDetails: {
+                  accountTitle: merchant.legal_name ?? merchant.business_name ?? "Safari Merchant",
+                  bankName: "—",
+                  accountNumber: "—",
+                  iban: "—",
+                  currency: "PKR",
+                  verified: false,
+                },
+                notes: [],
+                activities: [],
+                rejectionReason: merchant.rejection_reason,
+                suspensionReason: null,
               };
             },
           );
@@ -329,6 +357,47 @@ export const useMerchantStore =
               : "Could not load Safari unified orders.",
         });
       }
+    },
+
+    setStatus: async (merchantId, status, reason) => {
+      const verificationStatus =
+        status === "approved" ? "verified" :
+        status === "pending" ? "in_review" :
+        status;
+
+      await adminMerchantService.updateStatus(token(), merchantId, {
+        verificationStatus,
+        rejectionReason: status === "rejected" ? (reason ?? null) : null,
+      });
+
+      set((state) => ({
+        merchants: state.merchants.map((merchant) =>
+          merchant.id === merchantId
+            ? {
+                ...merchant,
+                status,
+                rejectionReason: status === "rejected" ? (reason ?? null) : null,
+                suspensionReason: status === "suspended" ? (reason ?? null) : null,
+              }
+            : merchant,
+        ),
+      }));
+    },
+
+    addNote: (merchantId, text, author) => {
+      set((state) => ({
+        merchants: state.merchants.map((merchant) =>
+          merchant.id === merchantId
+            ? {
+                ...merchant,
+                notes: [
+                  { id: `NOTE-${Date.now()}`, text, author, createdAt: new Date().toISOString() },
+                  ...merchant.notes,
+                ],
+              }
+            : merchant,
+        ),
+      }));
     },
   }));
 

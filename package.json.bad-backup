@@ -1,0 +1,12 @@
+﻿{
+  "name": "safari-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "mobile": "npm --prefix apps/mobile run start",
+    "mobile:android": "npm --prefix apps/mobile run android",
+    "mobile:web": "npm --prefix apps/mobile run web",
+    "backend": "npm --prefix backend run dev",
+    "admin": "npm --prefix apps/admin run dev"
+  }
+}

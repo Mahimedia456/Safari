@@ -4,6 +4,7 @@ export type AdminServiceProvider = {
   city_id: string;
   business_name: string;
   slug: string;
+  address?: string | null;
   verification_status: string;
   rating: number | string;
   is_featured: boolean;

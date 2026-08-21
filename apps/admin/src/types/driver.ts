@@ -1,3 +1,9 @@
+export type DriverStatus =
+  | "active"
+  | "offline"
+  | "suspended"
+  | "blocked";
+
 export type DriverVerificationStatus =
   | "pending"
   | "in_review"
@@ -7,17 +13,14 @@ export type DriverVerificationStatus =
 
 export type DriverOnboardingStatus =
   | "draft"
+  | "pending"
   | "submitted"
   | "under_review"
   | "approved"
   | "rejected"
   | "suspended";
 
-export type DriverDocumentStatus =
-  | "pending"
-  | "verified"
-  | "rejected"
-  | "expired";
+export type DriverDocumentStatus = DriverVerificationStatus;
 
 export type DriverDocument = {
   id: string;
@@ -48,7 +51,7 @@ export type Driver = {
   fullName: string;
   email: string;
   phone: string;
-  status: string;
+  status: DriverStatus | string;
   applicationStatus: DriverOnboardingStatus;
   verificationStatus: DriverVerificationStatus;
   online: boolean;
@@ -77,6 +80,7 @@ export type DriverApplication = {
   vehicleType: string;
   submittedAt: string;
   status: DriverOnboardingStatus;
+  reviewNotes?: string;
 };
 
 export type DriverVehicle = {

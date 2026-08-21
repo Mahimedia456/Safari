@@ -102,21 +102,27 @@ adminAnalyticsRouter.get("/dashboard", async (_req, res, next) => {
       if (result.error) throw new Error(result.error.message);
     }
 
-    const rideGmv = completedRides.data.reduce(
+    const completedRideData = completedRides.data ?? [];
+    const foodOrderData = foodOrders.data ?? [];
+    const commerceOrderData = commerceOrders.data ?? [];
+    const serviceBookingData = serviceBookings.data ?? [];
+    const incidentData = incidents.data ?? [];
+
+    const rideGmv = completedRideData.reduce(
       (sum, ride) =>
         sum + Number(ride.final_fare ?? ride.estimated_fare ?? 0),
       0,
     );
 
-    const foodGmv = foodOrders.data
+    const foodGmv = foodOrderData
       .filter((order) => order.status === "delivered")
       .reduce((sum, order) => sum + Number(order.total ?? 0), 0);
 
-    const commerceGmv = commerceOrders.data
+    const commerceGmv = commerceOrderData
       .filter((order) => order.status === "delivered")
       .reduce((sum, order) => sum + Number(order.total ?? 0), 0);
 
-    const servicesGmv = serviceBookings.data
+    const servicesGmv = serviceBookingData
       .filter((booking) => booking.booking_status === "completed")
       .reduce(
         (sum, booking) =>
@@ -140,7 +146,7 @@ adminAnalyticsRouter.get("/dashboard", async (_req, res, next) => {
 
         operations: {
           activeRides: activeRides.count ?? 0,
-          openIncidents: incidents.data.length,
+          openIncidents: incidentData.length,
         },
 
         gmv: {
@@ -155,7 +161,7 @@ adminAnalyticsRouter.get("/dashboard", async (_req, res, next) => {
             servicesGmv,
         },
 
-        incidents: incidents.data,
+        incidents: incidentData,
       },
     });
   } catch (error) {

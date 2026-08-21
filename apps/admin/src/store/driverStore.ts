@@ -7,7 +7,6 @@ import type {
   AdminDriverListItem,
   Driver,
   DriverApplication,
-  DriverDocument,
   DriverRating,
   DriverVehicle,
 } from "../types/driver";
@@ -33,10 +32,8 @@ type DriverState = {
 
   setApplicationStatus: (
     applicationId: string,
-    status:
-      | "under_review"
-      | "approved"
-      | "rejected",
+    status: "under_review" | "approved" | "rejected",
+    note?: string,
   ) => Promise<void>;
 
   setDriverStatus: (
@@ -65,6 +62,7 @@ type DriverState = {
   ) => Promise<void>;
 
   setDocumentStatus: (
+    driverId: string,
     documentId: string,
     status: "verified" | "rejected",
   ) => Promise<void>;
@@ -236,6 +234,7 @@ export const useDriverStore =
       async (
         applicationId,
         status,
+        note,
       ) => {
         const action =
           status ===
@@ -250,6 +249,7 @@ export const useDriverStore =
           token(),
           applicationId,
           action,
+          note ?? null,
         );
 
         await get().load();
@@ -372,28 +372,13 @@ export const useDriverStore =
 
     setDocumentStatus:
       async (
+        driverId,
         documentId,
         status,
       ) => {
-        const driver =
-          get().drivers.find(
-            (item) =>
-              item.documents.some(
-                (
-                  document: DriverDocument,
-                ) =>
-                  document.id ===
-                  documentId,
-              ),
-          );
-
-        if (!driver) {
-          return;
-        }
-
         await adminDriverService.updateDocumentStatus(
           token(),
-          driver.id,
+          driverId,
           documentId,
           status,
         );
