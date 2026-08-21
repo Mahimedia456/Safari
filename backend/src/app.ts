@@ -1,7 +1,23 @@
 import cors from "cors";
 import express from "express";
-import helmet from "helmet";
 import morgan from "morgan";
+
+import {
+  contentSecurityPolicy,
+  crossOriginEmbedderPolicy,
+  crossOriginOpenerPolicy,
+  crossOriginResourcePolicy,
+  dnsPrefetchControl,
+  frameguard,
+  hidePoweredBy,
+  hsts,
+  ieNoOpen,
+  noSniff,
+  originAgentCluster,
+  permittedCrossDomainPolicies,
+  referrerPolicy,
+  xssFilter,
+} from "helmet";
 
 import {
   corsOrigins,
@@ -28,13 +44,87 @@ import {
 export const app =
   express();
 
+/*
+|--------------------------------------------------------------------------
+| Express
+|--------------------------------------------------------------------------
+*/
+
 app.disable(
   "x-powered-by",
 );
 
+/*
+|--------------------------------------------------------------------------
+| Helmet security headers
+|--------------------------------------------------------------------------
+|
+| Using Helmet named middleware functions avoids the Vercel/NodeNext
+| TypeScript default-import callable issue.
+|
+*/
+
 app.use(
-  helmet(),
+  contentSecurityPolicy(),
 );
+
+app.use(
+  crossOriginEmbedderPolicy(),
+);
+
+app.use(
+  crossOriginOpenerPolicy(),
+);
+
+app.use(
+  crossOriginResourcePolicy(),
+);
+
+app.use(
+  dnsPrefetchControl(),
+);
+
+app.use(
+  frameguard(),
+);
+
+app.use(
+  hidePoweredBy(),
+);
+
+app.use(
+  hsts(),
+);
+
+app.use(
+  ieNoOpen(),
+);
+
+app.use(
+  noSniff(),
+);
+
+app.use(
+  originAgentCluster(),
+);
+
+app.use(
+  permittedCrossDomainPolicies(),
+);
+
+app.use(
+  referrerPolicy(),
+);
+
+app.use(
+  xssFilter(),
+);
+
+/*
+|--------------------------------------------------------------------------
+| CORS
+|--------------------------------------------------------------------------
+*/
 
 app.use(
   cors({
@@ -82,6 +172,12 @@ app.use(
   }),
 );
 
+/*
+|--------------------------------------------------------------------------
+| Body parsers
+|--------------------------------------------------------------------------
+*/
+
 app.use(
   express.json({
     limit: "2mb",
@@ -94,6 +190,12 @@ app.use(
     limit: "2mb",
   }),
 );
+
+/*
+|--------------------------------------------------------------------------
+| Development logging
+|--------------------------------------------------------------------------
+*/
 
 if (
   env.NODE_ENV ===
@@ -113,7 +215,7 @@ if (
 app.get(
   "/",
   (_req, res) => {
-    res.json({
+    res.status(200).json({
       success: true,
       name: "Safari API",
       version: "1.0.0",
@@ -127,7 +229,7 @@ app.get(
 
 /*
 |--------------------------------------------------------------------------
-| API
+| Safari API
 |--------------------------------------------------------------------------
 */
 
@@ -147,7 +249,7 @@ app.use(
 
 /*
 |--------------------------------------------------------------------------
-| 404 + Error handler
+| Error handling
 |--------------------------------------------------------------------------
 */
 
@@ -163,13 +265,6 @@ app.use(
 |--------------------------------------------------------------------------
 | Exports
 |--------------------------------------------------------------------------
-|
-| Named export:
-|   import { app } from "./app.js";
-|
-| Default export:
-|   import app from "./app.js";
-|
 */
 
 export default app;
