@@ -296,6 +296,30 @@ export async function consumeResetToken(
     );
   }
 
+  if (!challenge.verified_at) {
+    throw new Error(
+      "Safari password reset session has not been verified.",
+    );
+  }
+
+  const verifiedAt =
+    new Date(
+      challenge.verified_at,
+    ).getTime();
+
+  if (
+    !Number.isFinite(
+      verifiedAt,
+    ) ||
+    Date.now() -
+        verifiedAt >
+      15 * 60 * 1000
+  ) {
+    throw new Error(
+      "Safari password reset session has expired.",
+    );
+  }
+
   return challenge;
 }
 

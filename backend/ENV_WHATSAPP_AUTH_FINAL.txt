@@ -1,0 +1,28 @@
+Safari Backend required Vercel environment variables
+====================================================
+
+NODE_ENV=production
+CORS_ORIGINS=https://safari-pwo2.vercel.app
+
+SUPABASE_URL=https://ocdwbllqpsecemvvedoc.supabase.co
+SUPABASE_PUBLISHABLE_KEY=<your current publishable key>
+SUPABASE_SECRET_KEY=<your current secret/service-role key>
+
+AUTH_OTP_PEPPER=<long random secret, minimum 16 chars>
+AUTH_RESET_TOKEN_PEPPER=<different long random secret, minimum 16 chars>
+AUTH_OTP_TTL_SECONDS=300
+AUTH_OTP_MAX_ATTEMPTS=5
+AUTH_OTP_MAX_SENDS_PER_10_MINUTES=5
+
+META_GRAPH_VERSION=v23.0
+META_WHATSAPP_VERIFY_TOKEN=<your Meta webhook verify token>
+META_WHATSAPP_ACCESS_TOKEN=<your current rotated Meta access token>
+META_WHATSAPP_PHONE_NUMBER_ID=1217362621466284
+META_WHATSAPP_BUSINESS_ACCOUNT_ID=1028944836715885
+META_WHATSAPP_OTP_TEMPLATE=carpool_text
+META_WHATSAPP_OTP_TEMPLATE_LANGUAGE=en
+
+Important:
+- Supabase built-in Phone Provider is NOT used by this flow.
+- Do not put SUPABASE_SECRET_KEY, Meta access token, or OTP peppers in mobile/admin.
+- Rotate any secret that was previously pasted into chat or committed.

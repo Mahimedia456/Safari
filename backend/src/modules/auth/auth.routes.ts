@@ -34,7 +34,7 @@ const mobileRegisterSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   password,
   mode: z.enum(["passenger", "driver"]),
-  countryCode: z.enum(["PK", "DE"]),
+  countryCode: z.literal("PK"),
 });
 
 authRouter.post("/mobile/register", async (req, res, next) => {
