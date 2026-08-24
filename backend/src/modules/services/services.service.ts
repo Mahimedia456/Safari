@@ -339,3 +339,208 @@ export async function cancelServiceBooking(
 
   return data;
 }
+
+
+export async function listAvailableServiceJobs() {
+  const { data, error } = await supabaseAdmin
+    .from("service_bookings")
+    .select(`
+      *,
+      service_providers (
+        id,
+        business_name,
+        address
+      ),
+      provider_services (
+        id,
+        name,
+        duration_minutes
+      )
+    `)
+    .in("booking_status", ["requested", "confirmed"])
+    .is("assigned_worker_id", null)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function listWorkerServiceJobs(workerId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("service_bookings")
+    .select(`
+      *,
+      service_providers (
+        id,
+        business_name,
+        address
+      ),
+      provider_services (
+        id,
+        name,
+        duration_minutes
+      )
+    `)
+    .eq("assigned_worker_id", workerId)
+    .in("booking_status", [
+      "professional_assigned",
+      "on_the_way",
+      "arrived",
+      "in_progress"
+    ])
+    .order("assigned_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function acceptServiceJob(
+  workerId: string,
+  bookingId: string,
+) {
+  const { data, error } = await supabaseAdmin.rpc(
+    "accept_safari_service_job",
+    {
+      p_booking_id: bookingId,
+      p_worker_id: workerId,
+    },
+  );
+
+  if (error || !data) {
+    throw new Error(
+      error?.message ?? "Safari service job could not be accepted.",
+    );
+  }
+
+  const { data: booking, error: bookingError } = await supabaseAdmin
+    .from("service_bookings")
+    .select("*")
+    .eq("id", bookingId)
+    .eq("assigned_worker_id", workerId)
+    .single();
+
+  if (bookingError) throw new Error(bookingError.message);
+  return booking;
+}
+
+export async function updateWorkerServiceStatus(
+  workerId: string,
+  bookingId: string,
+  status: "on_the_way" | "arrived" | "in_progress" | "completed",
+) {
+  const { data: current, error: currentError } = await supabaseAdmin
+    .from("service_bookings")
+    .select("*")
+    .eq("id", bookingId)
+    .eq("assigned_worker_id", workerId)
+    .single();
+
+  if (currentError || !current) {
+    throw new Error("Safari service job was not found.");
+  }
+
+  const allowed: Record<string, string[]> = {
+    professional_assigned: ["on_the_way"],
+    on_the_way: ["arrived"],
+    arrived: ["in_progress"],
+    in_progress: ["completed"],
+  };
+
+  if (!(allowed[current.booking_status] ?? []).includes(status)) {
+    throw new Error(
+      `Safari service cannot move from ${current.booking_status} to ${status}.`,
+    );
+  }
+
+  const now = new Date().toISOString();
+
+  const updates: Record<string, unknown> = {
+    booking_status: status,
+    updated_at: now,
+  };
+
+  if (status === "arrived") updates.worker_arrived_at = now;
+  if (status === "in_progress") updates.work_started_at = now;
+
+  if (status === "completed") {
+    updates.worker_completed_at = now;
+    updates.completed_at = now;
+
+    if (current.payment_method === "cash") {
+      updates.payment_status = "paid";
+    }
+  }
+
+  const { data: booking, error } = await supabaseAdmin
+    .from("service_bookings")
+    .update(updates)
+    .eq("id", bookingId)
+    .eq("assigned_worker_id", workerId)
+    .select("*")
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  await supabaseAdmin.from("service_booking_events").insert({
+    booking_id: bookingId,
+    from_status: current.booking_status,
+    to_status: status,
+    actor_type: "professional",
+    actor_user_id: workerId,
+    note: "Safari professional updated service status.",
+  });
+
+  await supabaseAdmin.from("notifications").insert({
+    user_id: current.customer_id,
+    notification_type: `service_${status}`,
+    title:
+      status === "on_the_way"
+        ? "Your Safari professional is on the way"
+        : status === "arrived"
+          ? "Your Safari professional has arrived"
+          : status === "in_progress"
+            ? "Your Safari service has started"
+            : "Your Safari service is complete",
+    body:
+      status === "completed"
+        ? "You can now rate your Safari service."
+        : "Track the latest service status in Safari.",
+    data: {
+      bookingId,
+      status,
+    },
+    is_read: false,
+  });
+
+  return booking;
+}
+
+export async function getCustomerServiceTracking(
+  customerId: string,
+  bookingId: string,
+) {
+  const data = await getServiceBooking(customerId, bookingId);
+  const workerId = data.booking?.assigned_worker_id ?? null;
+
+  let workerLocation = null;
+
+  if (workerId) {
+    const locationResult = await supabaseAdmin
+      .from("driver_locations")
+      .select("*")
+      .eq("driver_id", workerId)
+      .maybeSingle();
+
+    if (locationResult.error) {
+      throw new Error(locationResult.error.message);
+    }
+
+    workerLocation = locationResult.data ?? null;
+  }
+
+  return {
+    ...data,
+    workerLocation,
+  };
+}

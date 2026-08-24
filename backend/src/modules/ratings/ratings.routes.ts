@@ -6,6 +6,7 @@ import {
   getRideRatings,
   getRideReceipt,
   submitRideRating,
+  submitExperienceRating,
 } from "./ratings.service.js";
 
 export const ratingsRouter = Router();
@@ -66,3 +67,40 @@ ratingsRouter.post("/rides/:rideId/ratings", async (req, res, next) => {
     next(error);
   }
 });
+
+
+ratingsRouter.post(
+  "/experiences/:type/:sourceId",
+  async (req, res, next) => {
+    try {
+      const type = z
+        .enum(["food", "grocery", "pharmacy", "service"])
+        .parse(req.params.type);
+
+      const sourceId = z.string().uuid().parse(req.params.sourceId);
+
+      const input = z
+        .object({
+          rating: z.number().int().min(1).max(5),
+          comment: z.string().trim().max(500).nullable().optional(),
+          tags: z.array(z.string().trim().min(1).max(50)).max(8).optional(),
+        })
+        .parse(req.body);
+
+      const rating = await submitExperienceRating(
+        req.authUser!.id,
+        type,
+        sourceId,
+        input,
+      );
+
+      res.status(201).json({
+        success: true,
+        data: { rating },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+

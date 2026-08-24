@@ -1,7 +1,3 @@
-import {
-  Clock3,
-} from "lucide-react";
-
 import type {
   Ride,
 } from "../../types/ride";
@@ -10,11 +6,11 @@ type Props = {
   ride: Ride;
 };
 
-function formatDateTime(
-  value?: string | null,
+function formatTimelineDate(
+  value?: string,
 ) {
   if (!value) {
-    return "—";
+    return "Time unavailable";
   }
 
   const date =
@@ -25,33 +21,10 @@ function formatDateTime(
       date.getTime(),
     )
   ) {
-    return "—";
+    return "Time unavailable";
   }
 
-  return new Intl.DateTimeFormat(
-    "en-PK",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  ).format(date);
-}
-
-function formatStatus(
-  status?: string | null,
-) {
-  if (!status) {
-    return "Ride activity";
-  }
-
-  return status
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) =>
-      letter.toUpperCase(),
-    );
+  return date.toLocaleString();
 }
 
 export default function RideTimeline({
@@ -61,97 +34,80 @@ export default function RideTimeline({
     ride.timeline ?? [];
 
   return (
-    <section className="safari-card p-5">
-      <div className="mb-5">
-        <h2 className="text-base font-extrabold text-[var(--safari-text-strong)]">
-          Ride Timeline
-        </h2>
+    <section className="safari-card p-6">
+      <h2 className="text-base font-semibold text-slate-950 dark:text-white">
+        Ride Timeline
+      </h2>
 
-        <p className="mt-1 text-xs text-[var(--safari-muted)]">
-          Status history and ride
-          activity
-        </p>
-      </div>
-
-      {timeline.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--safari-border)] px-5 py-10 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-safari-500/10 text-safari-600 dark:text-safari-400">
-            <Clock3 size={19} />
+      <div className="mt-6">
+        {timeline.length ===
+        0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
+            No ride timeline
+            events are available
+            yet.
           </div>
-
-          <p className="mt-3 text-sm font-semibold text-[var(--safari-text-strong)]">
-            No timeline activity
-          </p>
-
-          <p className="mt-1 text-xs text-[var(--safari-muted)]">
-            Ride events will appear
-            here as the trip
-            progresses.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-0">
-          {timeline.map(
+        ) : (
+          timeline.map(
             (
               entry,
               index,
             ) => {
+              const isLast =
+                index ===
+                timeline.length -
+                  1;
+
               const title =
-                entry.title?.trim() ||
-                formatStatus(
-                  entry.status,
-                );
+                entry.title ??
+                entry.status
+                  ?.replaceAll(
+                    "_",
+                    " ",
+                  ) ??
+                "Ride update";
 
               return (
                 <div
                   key={
                     entry.id ??
-                    entry.createdAt ??
-                    `${entry.status ?? "event"}-${index}`
+                    `${entry.status ?? "ride-event"}-${index}`
                   }
-                  className="relative flex gap-4 pb-6 last:pb-0"
+                  className="relative flex gap-4"
                 >
-                  {index !==
-                  timeline.length -
-                    1 ? (
-                    <div className="absolute left-[15px] top-8 h-[calc(100%-20px)] w-px bg-[var(--safari-border)]" />
-                  ) : null}
+                  <div className="relative flex w-4 shrink-0 justify-center">
+                    <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-safari-500" />
 
-                  <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-safari-500/10 text-safari-600 dark:text-safari-400">
-                    <Clock3
-                      size={14}
-                    />
+                    {!isLast ? (
+                      <div className="absolute bottom-0 top-4 w-px bg-slate-200 dark:bg-white/10" />
+                    ) : null}
                   </div>
 
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-[var(--safari-text-strong)]">
-                          {title}
-                        </p>
+                  <div className="min-w-0 flex-1 pb-6">
+                    <div className="text-sm font-semibold capitalize text-slate-900 dark:text-white">
+                      {title}
+                    </div>
 
-                        {entry.description ? (
-                          <p className="mt-1 text-xs leading-5 text-[var(--safari-muted)]">
-                            {
-                              entry.description
-                            }
-                          </p>
-                        ) : null}
-                      </div>
+                    {entry.description ? (
+                      <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        {
+                          entry.description
+                        }
+                      </p>
+                    ) : null}
 
-                      <span className="shrink-0 text-[11px] font-medium text-[var(--safari-muted)]">
-                        {formatDateTime(
-                          entry.createdAt,
-                        )}
-                      </span>
+                    <div className="mt-2 text-xs text-slate-400">
+                      {formatTimelineDate(
+                        entry.createdAt,
+                      )}
                     </div>
                   </div>
                 </div>
               );
             },
-          )}
-        </div>
-      )}
+          )
+        )}
+      </div>
     </section>
   );
 }

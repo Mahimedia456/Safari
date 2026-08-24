@@ -138,6 +138,71 @@ adminRidesRouter.patch("/pricing/:pricingId", async (req, res, next) => {
   }
 });
 
+
+adminRidesRouter.get("/driver-offers", async (_req, res, next) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("ride_driver_offers")
+      .select(`
+        *,
+        rides (
+          id,
+          ride_number,
+          pickup_address,
+          dropoff_address,
+          suggested_fare,
+          agreed_fare,
+          ride_status,
+          ride_categories (
+            code,
+            name
+          )
+        ),
+        profiles!ride_driver_offers_driver_id_fkey (
+          id,
+          full_name,
+          phone
+        )
+      `)
+      .order("created_at", { ascending: false })
+      .limit(300);
+
+    if (error) throw new Error(error.message);
+
+    res.json({
+      success: true,
+      data: {
+        offers: data ?? [],
+        total: data?.length ?? 0,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRidesRouter.get("/delivery-jobs", async (_req, res, next) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("delivery_jobs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    if (error) throw new Error(error.message);
+
+    res.json({
+      success: true,
+      data: {
+        jobs: data ?? [],
+        total: data?.length ?? 0,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRidesRouter.get("/", async (req, res, next) => {
   try {
     const query = z

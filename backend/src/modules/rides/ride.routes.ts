@@ -12,6 +12,12 @@ import {
   listPassengerRides,
 } from "./ride.service.js";
 
+import {
+  getRoadRoute,
+  reverseRidePlace,
+  searchRidePlaces,
+} from "./places.service.js";
+
 export const rideRouter = Router();
 
 rideRouter.use(
@@ -19,11 +25,89 @@ rideRouter.use(
   requireAccountTypes("passenger", "driver", "delivery_partner"),
 );
 
+
+rideRouter.get("/places/search", async (req, res, next) => {
+  try {
+    const query = z
+      .object({
+        q: z.string().trim().min(2).max(120),
+        latitude: z.coerce.number().optional(),
+        longitude: z.coerce.number().optional(),
+      })
+      .parse(req.query);
+
+    const places = await searchRidePlaces(
+      query.q,
+      query.latitude,
+      query.longitude,
+    );
+
+    res.json({
+      success: true,
+      data: { places },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+rideRouter.get("/places/reverse", async (req, res, next) => {
+  try {
+    const query = z
+      .object({
+        latitude: z.coerce.number(),
+        longitude: z.coerce.number(),
+      })
+      .parse(req.query);
+
+    const place = await reverseRidePlace(
+      query.latitude,
+      query.longitude,
+    );
+
+    res.json({
+      success: true,
+      data: { place },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+rideRouter.post("/route", async (req, res, next) => {
+  try {
+    const input = z
+      .object({
+        pickup: z.object({
+          latitude: z.number(),
+          longitude: z.number(),
+        }),
+        destination: z.object({
+          latitude: z.number(),
+          longitude: z.number(),
+        }),
+      })
+      .parse(req.body);
+
+    const data = await getRoadRoute(
+      input.pickup,
+      input.destination,
+    );
+
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 rideRouter.get("/catalog", async (req, res, next) => {
   try {
     const query = z
       .object({
-        countryCode: z.enum(["PK", "DE"]).default("PK"),
+        countryCode: z.literal("PK").default("PK"),
         latitude: z.coerce.number().optional(),
         longitude: z.coerce.number().optional(),
       })
@@ -45,7 +129,7 @@ rideRouter.post("/quotes", async (req, res, next) => {
   try {
     const input = z
       .object({
-        countryCode: z.enum(["PK", "DE"]).default("PK"),
+        countryCode: z.literal("PK").default("PK"),
         pickupAddress: z.string().trim().min(3).max(240),
         pickupLatitude: z.number(),
         pickupLongitude: z.number(),

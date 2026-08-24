@@ -1,3 +1,4 @@
+import { getRoadRoute } from "./places.service.js";
 import { supabaseAdmin } from "../../lib/supabase.js";
 
 const EARTH_RADIUS_KM = 6371;
@@ -29,54 +30,211 @@ function roundMoney(value: number) {
 }
 
 async function findCityForPickup(
-  countryCode: "PK" | "DE",
+  countryCode: "PK",
   latitude: number,
   longitude: number,
 ) {
-  const { data: cities, error: cityError } = await supabaseAdmin
-    .from("service_cities")
-    .select("*")
-    .eq("country_code", countryCode)
-    .eq("is_active", true);
-
-  if (cityError) throw new Error(cityError.message);
-
-  for (const city of cities) {
-    const { data: zones, error: zoneError } = await supabaseAdmin
-      .from("service_zones")
+  const {
+    data: cities,
+    error: cityError,
+  } =
+    await supabaseAdmin
+      .from("service_cities")
       .select("*")
-      .eq("city_id", city.id)
-      .eq("is_active", true)
-      .eq("pickup_allowed", true);
+      .eq(
+        "country_code",
+        countryCode,
+      )
+      .eq(
+        "is_active",
+        true,
+      );
 
-    if (zoneError) throw new Error(zoneError.message);
+  if (cityError) {
+    throw new Error(
+      cityError.message,
+    );
+  }
 
-    const matchingZone = zones.find((zone) => {
+  let nearest:
+    | {
+        city: any;
+        zone: any;
+        distance: number;
+      }
+    | null = null;
+
+  for (
+    const city of
+    cities ?? []
+  ) {
+    const {
+      data: zones,
+      error: zoneError,
+    } =
+      await supabaseAdmin
+        .from(
+          "service_zones",
+        )
+        .select("*")
+        .eq(
+          "city_id",
+          city.id,
+        )
+        .eq(
+          "is_active",
+          true,
+        )
+        .eq(
+          "pickup_allowed",
+          true,
+        );
+
+    if (
+      zoneError
+    ) {
+      throw new Error(
+        zoneError.message,
+      );
+    }
+
+    for (
+      const zone of
+      zones ?? []
+    ) {
+      const minLat =
+        zone.min_latitude ==
+        null
+          ? null
+          : Number(
+              zone.min_latitude,
+            );
+
+      const maxLat =
+        zone.max_latitude ==
+        null
+          ? null
+          : Number(
+              zone.max_latitude,
+            );
+
+      const minLon =
+        zone.min_longitude ==
+        null
+          ? null
+          : Number(
+              zone.min_longitude,
+            );
+
+      const maxLon =
+        zone.max_longitude ==
+        null
+          ? null
+          : Number(
+              zone.max_longitude,
+            );
+
       const insideLatitude =
-        zone.min_latitude == null ||
-        zone.max_latitude == null ||
-        (latitude >= Number(zone.min_latitude) &&
-          latitude <= Number(zone.max_latitude));
+        minLat == null ||
+        maxLat == null ||
+        (
+          latitude >=
+            minLat &&
+          latitude <=
+            maxLat
+        );
 
       const insideLongitude =
-        zone.min_longitude == null ||
-        zone.max_longitude == null ||
-        (longitude >= Number(zone.min_longitude) &&
-          longitude <= Number(zone.max_longitude));
+        minLon == null ||
+        maxLon == null ||
+        (
+          longitude >=
+            minLon &&
+          longitude <=
+            maxLon
+        );
 
-      return insideLatitude && insideLongitude;
-    });
+      if (
+        insideLatitude &&
+        insideLongitude
+      ) {
+        return {
+          city,
+          zone,
+        };
+      }
 
-    if (matchingZone) {
-      return { city, zone: matchingZone };
+      if (
+        minLat != null &&
+        maxLat != null &&
+        minLon != null &&
+        maxLon != null
+      ) {
+        const centerLat =
+          (
+            minLat +
+            maxLat
+          ) / 2;
+
+        const centerLon =
+          (
+            minLon +
+            maxLon
+          ) / 2;
+
+        const distance =
+          haversineKm(
+            latitude,
+            longitude,
+            centerLat,
+            centerLon,
+          );
+
+        if (
+          !nearest ||
+          distance <
+            nearest.distance
+        ) {
+          nearest = {
+            city,
+            zone,
+            distance,
+          };
+        }
+      }
     }
   }
 
-  return null;
+  if (
+    nearest
+  ) {
+    return {
+      city:
+        nearest.city,
+      zone:
+        nearest.zone,
+    };
+  }
+
+  const fallbackCity =
+    cities?.[0] ??
+    null;
+
+  if (
+    !fallbackCity
+  ) {
+    return null;
+  }
+
+  return {
+    city:
+      fallbackCity,
+    zone: null,
+  };
 }
 
 export async function getRideCatalog(
-  countryCode: "PK" | "DE",
+  countryCode: "PK",
   latitude?: number,
   longitude?: number,
 ) {
@@ -164,7 +322,7 @@ export async function getRideCatalog(
 export async function createFareQuotes(
   passengerId: string,
   input: {
-    countryCode: "PK" | "DE";
+    countryCode: "PK";
     pickupAddress: string;
     pickupLatitude: number;
     pickupLongitude: number;
@@ -192,20 +350,67 @@ export async function createFareQuotes(
     input.pickupLongitude,
   );
 
-  const straightLineDistance = haversineKm(
-    input.pickupLatitude,
-    input.pickupLongitude,
-    input.dropoffLatitude,
-    input.dropoffLongitude,
-  );
+  let estimatedDistanceKm: number;
+  let estimatedDurationMinutes: number;
 
-  // Phase 06 fallback route estimate.
-  // A routing engine / maps API can replace this later without changing quote tables.
-  const estimatedDistanceKm = Math.max(1, straightLineDistance * 1.22);
-  const estimatedDurationMinutes = Math.max(
-    5,
-    (estimatedDistanceKm / 28) * 60,
-  );
+  try {
+    const roadRoute =
+      await getRoadRoute(
+        {
+          latitude:
+            input.pickupLatitude,
+          longitude:
+            input.pickupLongitude,
+        },
+        {
+          latitude:
+            input.dropoffLatitude,
+          longitude:
+            input.dropoffLongitude,
+        },
+      );
+
+    estimatedDistanceKm =
+      Math.max(
+        1,
+        roadRoute.distanceKm,
+      );
+
+    estimatedDurationMinutes =
+      Math.max(
+        4,
+        roadRoute.durationMinutes,
+      );
+  } catch (routingError) {
+    console.error(
+      "[Safari Ride] OSRM routing fallback:",
+      routingError,
+    );
+
+    const straightLineDistance =
+      haversineKm(
+        input.pickupLatitude,
+        input.pickupLongitude,
+        input.dropoffLatitude,
+        input.dropoffLongitude,
+      );
+
+    estimatedDistanceKm =
+      Math.max(
+        1,
+        straightLineDistance *
+          1.22,
+      );
+
+    estimatedDurationMinutes =
+      Math.max(
+        5,
+        (
+          estimatedDistanceKm /
+          28
+        ) * 60,
+      );
+  }
 
   const maxTripDistance = Number(
     catalog.settings?.max_trip_distance_km ?? 80,
@@ -290,7 +495,8 @@ export async function createFareQuotes(
         passenger_capacity,
         vehicle_type,
         icon_key,
-        color_key
+        color_key,
+        service_tier
       )
     `);
 
@@ -316,7 +522,15 @@ export async function createRideFromQuote(
 ) {
   const { data: quote, error: quoteError } = await supabaseAdmin
     .from("ride_quotes")
-    .select("*")
+    .select(`
+      *,
+      ride_categories (
+        code,
+        name,
+        vehicle_type,
+        service_tier
+      )
+    `)
     .eq("id", input.quoteId)
     .eq("passenger_id", passengerId)
     .eq("quote_status", "active")
@@ -406,6 +620,11 @@ export async function createRideFromQuote(
 
       currency_code: quote.currency_code,
       estimated_fare: quote.estimated_total,
+      suggested_fare: quote.estimated_total,
+      requested_vehicle_type:
+        quote.ride_categories?.vehicle_type ?? null,
+      service_tier:
+        quote.ride_categories?.service_tier ?? null,
 
       payment_method: quote.payment_method,
       payment_status:
@@ -419,7 +638,8 @@ export async function createRideFromQuote(
         code,
         name,
         passenger_capacity,
-        vehicle_type
+        vehicle_type,
+        service_tier
       ),
       service_cities (
         name,
@@ -467,7 +687,8 @@ export async function listPassengerRides(
         code,
         name,
         passenger_capacity,
-        vehicle_type
+        vehicle_type,
+        service_tier
       ),
       service_cities (
         name,

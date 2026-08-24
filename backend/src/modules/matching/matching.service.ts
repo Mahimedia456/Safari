@@ -24,51 +24,64 @@ function haversineKm(
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
 }
 
-function estimatedPickupMinutes(distanceKm: number) {
-  return Math.max(2, Math.round((distanceKm / 24) * 60));
+async function offerSettings(cityId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("ride_service_settings")
+    .select(
+      "driver_offer_min_factor,driver_offer_max_factor,driver_offer_expiry_seconds,max_driver_offers",
+    )
+    .eq("city_id", cityId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+
+  return {
+    minFactor: Number(data?.driver_offer_min_factor ?? 0.7),
+    maxFactor: Number(data?.driver_offer_max_factor ?? 1.5),
+    expirySeconds: Number(data?.driver_offer_expiry_seconds ?? 90),
+    maxOffers: Number(data?.max_driver_offers ?? 8),
+  };
 }
 
-export async function startRideMatching(rideId: string) {
+export async function startRideMatching(
+  passengerId: string,
+  rideId: string,
+) {
   const { data: ride, error: rideError } = await supabaseAdmin
     .from("rides")
     .select(`
       *,
       ride_categories (
         code,
-        vehicle_type
+        name,
+        vehicle_type,
+        service_tier
       )
     `)
     .eq("id", rideId)
+    .eq("passenger_id", passengerId)
     .single();
 
-  if (rideError || !ride) {
-    throw new Error("Safari ride not found.");
-  }
+  if (rideError || !ride) throw new Error("Safari ride not found.");
 
   if (!["requested", "searching"].includes(ride.ride_status)) {
-    throw new Error("This ride is not eligible for driver matching.");
+    throw new Error("This Safari ride is not accepting driver offers.");
   }
 
   const categoryCode = ride.ride_categories?.code;
+  if (!categoryCode) throw new Error("Safari ride category is unavailable.");
 
-  const { data: drivers, error: driverError } = await supabaseAdmin
+  const settings = await offerSettings(ride.city_id);
+
+  const { data: drivers, error: driversError } = await supabaseAdmin
     .from("driver_profiles")
-    .select(`
-      *,
-      profiles!driver_profiles_user_id_fkey (
-        id,
-        full_name,
-        phone,
-        status,
-        account_type
-      )
-    `)
+    .select("user_id,is_online,is_available,onboarding_status,verification_status")
     .eq("onboarding_status", "approved")
     .eq("verification_status", "verified")
     .eq("is_online", true)
     .eq("is_available", true);
 
-  if (driverError) throw new Error(driverError.message);
+  if (driversError) throw new Error(driversError.message);
 
   const candidates: Array<{
     driverId: string;
@@ -77,30 +90,7 @@ export async function startRideMatching(rideId: string) {
     etaMinutes: number;
   }> = [];
 
-  for (const driver of drivers) {
-    const { data: preference, error: preferenceError } = await supabaseAdmin
-      .from("driver_match_preferences")
-      .select("*")
-      .eq("driver_id", driver.user_id)
-      .maybeSingle();
-
-    if (preferenceError) throw new Error(preferenceError.message);
-
-    const categoryAccepted =
-      categoryCode === "economy"
-        ? preference?.accepts_economy !== false
-        : categoryCode === "comfort"
-          ? preference?.accepts_comfort !== false
-          : categoryCode === "premium"
-            ? preference?.accepts_premium !== false
-            : categoryCode === "bike"
-              ? preference?.accepts_bike !== false
-              : categoryCode === "rickshaw"
-                ? preference?.accepts_rickshaw !== false
-                : preference?.accepts_xl !== false;
-
-    if (!categoryAccepted) continue;
-
+  for (const driver of drivers ?? []) {
     const { data: vehicle, error: vehicleError } = await supabaseAdmin
       .from("driver_vehicles")
       .select("*")
@@ -130,94 +120,83 @@ export async function startRideMatching(rideId: string) {
       Number(ride.pickup_longitude),
     );
 
-    const maxDistance = Number(
-      preference?.max_pickup_distance_km ?? 8,
-    );
-
-    if (distanceKm > maxDistance) continue;
+    if (distanceKm > 12) continue;
 
     candidates.push({
       driverId: driver.user_id,
       vehicleId: vehicle.id,
       distanceKm,
-      etaMinutes: estimatedPickupMinutes(distanceKm),
+      etaMinutes: Math.max(2, Math.round((distanceKm / 24) * 60)),
     });
   }
 
   candidates.sort((a, b) => a.distanceKm - b.distanceKm);
 
-  const now = new Date();
-  const expiry = new Date(now.getTime() + 25 * 1000).toISOString();
+  const selected = candidates.slice(0, settings.maxOffers);
+  const expiresAt = new Date(
+    Date.now() + settings.expirySeconds * 1000,
+  ).toISOString();
 
-  const topCandidates = candidates.slice(0, 5);
-
-  if (topCandidates.length === 0) {
-    await supabaseAdmin
-      .from("rides")
-      .update({
-        ride_status: "searching",
-        matching_started_at: ride.matching_started_at ?? now.toISOString(),
-        matching_attempts: Number(ride.matching_attempts ?? 0) + 1,
-        updated_at: now.toISOString(),
-      })
-      .eq("id", rideId);
-
-    return {
-      rideId,
-      candidates: [],
-      offersCreated: 0,
-      message: "No eligible Safari driver is currently nearby.",
-    };
-  }
-
-  const rows = topCandidates.map((candidate) => ({
-    ride_id: rideId,
+  const rows = selected.map((candidate) => ({
+    ride_id: ride.id,
     driver_id: candidate.driverId,
     vehicle_id: candidate.vehicleId,
     match_status: "offered",
-    distance_to_pickup_km: Math.round(candidate.distanceKm * 100) / 100,
+    distance_to_pickup_km:
+      Math.round(candidate.distanceKm * 100) / 100,
     estimated_pickup_minutes: candidate.etaMinutes,
-    expires_at: expiry,
+    expires_at: expiresAt,
   }));
 
-  const { data: offers, error: offerError } = await supabaseAdmin
-    .from("ride_match_requests")
-    .upsert(rows, {
-      onConflict: "ride_id,driver_id",
-    })
-    .select("*");
+  let invitations: any[] = [];
 
-  if (offerError) throw new Error(offerError.message);
+  if (rows.length > 0) {
+    const result = await supabaseAdmin
+      .from("ride_match_requests")
+      .upsert(rows, {
+        onConflict: "ride_id,driver_id",
+      })
+      .select("*");
+
+    if (result.error) throw new Error(result.error.message);
+    invitations = result.data ?? [];
+
+    await supabaseAdmin.from("notifications").insert(
+      invitations.map((invitation) => ({
+        user_id: invitation.driver_id,
+        notification_type: "ride_request",
+        title: "New Safari ride request",
+        body: `Send your fare offer for ${ride.ride_categories?.name ?? "this ride"}.`,
+        data: {
+          rideId: ride.id,
+          invitationId: invitation.id,
+          suggestedFare: ride.suggested_fare ?? ride.estimated_fare,
+          expiresAt: invitation.expires_at,
+        },
+        is_read: false,
+      })),
+    );
+  }
 
   await supabaseAdmin
     .from("rides")
     .update({
       ride_status: "searching",
-      matching_started_at: ride.matching_started_at ?? now.toISOString(),
+      matching_started_at: ride.matching_started_at ?? new Date().toISOString(),
       matching_attempts: Number(ride.matching_attempts ?? 0) + 1,
-      updated_at: now.toISOString(),
+      updated_at: new Date().toISOString(),
     })
-    .eq("id", rideId);
+    .eq("id", ride.id);
 
   return {
-    rideId,
-    candidates: topCandidates,
-    offersCreated: offers.length,
-    offers,
+    rideId: ride.id,
+    invitationsCreated: invitations.length,
+    invitations,
   };
 }
 
-export async function listDriverOffers(driverId: string) {
-  await supabaseAdmin
-    .from("ride_match_requests")
-    .update({
-      match_status: "expired",
-      responded_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("driver_id", driverId)
-    .eq("match_status", "offered")
-    .lt("expires_at", new Date().toISOString());
+export async function listDriverRideRequests(driverId: string) {
+  const now = new Date().toISOString();
 
   const { data, error } = await supabaseAdmin
     .from("ride_match_requests")
@@ -227,7 +206,6 @@ export async function listDriverOffers(driverId: string) {
         id,
         ride_number,
         ride_status,
-        booking_type,
         pickup_address,
         pickup_latitude,
         pickup_longitude,
@@ -236,154 +214,272 @@ export async function listDriverOffers(driverId: string) {
         dropoff_longitude,
         estimated_distance_km,
         estimated_duration_minutes,
-        estimated_fare,
         currency_code,
-        payment_method,
+        suggested_fare,
+        estimated_fare,
+        requested_vehicle_type,
+        service_tier,
         ride_categories (
           code,
-          name
+          name,
+          vehicle_type,
+          service_tier
         )
       ),
       driver_vehicles (
         id,
         make,
         model,
+        year,
         color,
-        plate_number
+        plate_number,
+        ride_category
       )
     `)
     .eq("driver_id", driverId)
     .eq("match_status", "offered")
-    .gt("expires_at", new Date().toISOString())
+    .gt("expires_at", now)
     .order("offered_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data;
+  return data ?? [];
 }
 
-export async function acceptDriverOffer(
+export async function submitDriverFareOffer(
   driverId: string,
-  offerId: string,
+  invitationId: string,
+  offeredFare: number,
 ) {
-  const { data: offer, error: offerError } = await supabaseAdmin
+  const { data: invitation, error: invitationError } = await supabaseAdmin
     .from("ride_match_requests")
-    .select("*")
-    .eq("id", offerId)
+    .select(`
+      *,
+      rides (
+        id,
+        passenger_id,
+        city_id,
+        ride_status,
+        currency_code,
+        suggested_fare,
+        estimated_fare
+      )
+    `)
+    .eq("id", invitationId)
     .eq("driver_id", driverId)
     .eq("match_status", "offered")
     .single();
 
-  if (offerError || !offer) {
-    throw new Error("Safari ride offer is no longer available.");
+  if (invitationError || !invitation) {
+    throw new Error("Safari ride request is no longer available.");
   }
 
-  if (new Date(offer.expires_at).getTime() <= Date.now()) {
-    throw new Error("Safari ride offer has expired.");
+  if (new Date(invitation.expires_at).getTime() <= Date.now()) {
+    throw new Error("Safari ride request has expired.");
   }
 
-  const { data: ride, error: rideError } = await supabaseAdmin
-    .from("rides")
+  const ride = invitation.rides;
+  if (!ride || !["requested", "searching"].includes(ride.ride_status)) {
+    throw new Error("This Safari ride is no longer accepting offers.");
+  }
+
+  const settings = await offerSettings(ride.city_id);
+  const suggestedFare = Number(ride.suggested_fare ?? ride.estimated_fare ?? 0);
+
+  const minFare = Math.floor(suggestedFare * settings.minFactor);
+  const maxFare = Math.ceil(suggestedFare * settings.maxFactor);
+
+  if (offeredFare < minFare || offeredFare > maxFare) {
+    throw new Error(
+      `Offer must be between PKR ${minFare.toLocaleString("en-PK")} and PKR ${maxFare.toLocaleString("en-PK")}.`,
+    );
+  }
+
+  const expiresAt = new Date(
+    Date.now() + settings.expirySeconds * 1000,
+  ).toISOString();
+
+  const { data: offer, error: offerError } = await supabaseAdmin
+    .from("ride_driver_offers")
+    .upsert(
+      {
+        ride_id: ride.id,
+        driver_id: driverId,
+        vehicle_id: invitation.vehicle_id,
+        invitation_id: invitation.id,
+        offered_fare: offeredFare,
+        currency_code: ride.currency_code ?? "PKR",
+        distance_to_pickup_km: invitation.distance_to_pickup_km,
+        estimated_pickup_minutes: invitation.estimated_pickup_minutes,
+        offer_status: "pending",
+        expires_at: expiresAt,
+        responded_at: null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "ride_id,driver_id" },
+    )
     .select("*")
-    .eq("id", offer.ride_id)
     .single();
 
-  if (rideError || !ride) throw new Error("Safari ride not found.");
-
-  if (!["requested", "searching"].includes(ride.ride_status)) {
-    throw new Error("Another driver has already accepted this Safari ride.");
-  }
-
-  const now = new Date().toISOString();
-
-  const { data: updatedRide, error: updateError } = await supabaseAdmin
-    .from("rides")
-    .update({
-      driver_id: driverId,
-      vehicle_id: offer.vehicle_id,
-      ride_status: "driver_assigned",
-      accepted_at: now,
-      matched_at: now,
-      driver_arrival_eta_minutes: offer.estimated_pickup_minutes,
-      driver_distance_to_pickup_km: offer.distance_to_pickup_km,
-      updated_at: now,
-    })
-    .eq("id", ride.id)
-    .in("ride_status", ["requested", "searching"])
-    .select("*")
-    .single();
-
-  if (updateError) {
-    throw new Error("Another driver has already accepted this Safari ride.");
-  }
+  if (offerError) throw new Error(offerError.message);
 
   await Promise.all([
     supabaseAdmin
       .from("ride_match_requests")
       .update({
         match_status: "accepted",
-        responded_at: now,
-        updated_at: now,
+        responded_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
-      .eq("id", offerId),
+      .eq("id", invitation.id),
 
-    supabaseAdmin
-      .from("ride_match_requests")
-      .update({
-        match_status: "cancelled",
-        responded_at: now,
-        updated_at: now,
-      })
-      .eq("ride_id", ride.id)
-      .neq("id", offerId)
-      .eq("match_status", "offered"),
-
-    supabaseAdmin
-      .from("driver_profiles")
-      .update({
-        is_available: false,
-        updated_at: now,
-      })
-      .eq("user_id", driverId),
-
-    supabaseAdmin
-      .from("driver_locations")
-      .update({
-        ride_id: ride.id,
-        updated_at: now,
-      })
-      .eq("driver_id", driverId),
-
-    supabaseAdmin
-      .from("ride_status_events")
-      .insert({
-        ride_id: ride.id,
-        from_status: ride.ride_status,
-        to_status: "driver_assigned",
-        actor_type: "driver",
-        actor_user_id: driverId,
-        note: "Driver accepted the Safari ride.",
-      }),
+    supabaseAdmin.from("notifications").insert({
+      user_id: ride.passenger_id,
+      notification_type: "driver_fare_offer",
+      title: "New driver offer",
+      body: `A Safari driver offered PKR ${Math.round(offeredFare).toLocaleString("en-PK")}.`,
+      data: {
+        rideId: ride.id,
+        driverOfferId: offer.id,
+        offeredFare,
+      },
+      is_read: false,
+    }),
   ]);
 
-  return updatedRide;
+  return offer;
 }
 
-export async function rejectDriverOffer(
-  driverId: string,
-  offerId: string,
-  reason?: string | null,
+export async function listPassengerDriverOffers(
+  passengerId: string,
+  rideId: string,
 ) {
+  const { data: ride, error: rideError } = await supabaseAdmin
+    .from("rides")
+    .select("id,passenger_id,ride_status,suggested_fare,estimated_fare,currency_code")
+    .eq("id", rideId)
+    .eq("passenger_id", passengerId)
+    .single();
+
+  if (rideError || !ride) throw new Error("Safari ride not found.");
+
   const now = new Date().toISOString();
 
+  await supabaseAdmin
+    .from("ride_driver_offers")
+    .update({
+      offer_status: "expired",
+      responded_at: now,
+      updated_at: now,
+    })
+    .eq("ride_id", rideId)
+    .eq("offer_status", "pending")
+    .lt("expires_at", now);
+
+  const { data, error } = await supabaseAdmin
+    .from("ride_driver_offers")
+    .select(`
+      *,
+      profiles!ride_driver_offers_driver_id_fkey (
+        id,
+        full_name,
+        avatar_url,
+        average_rating,
+        rating_count
+      ),
+      driver_vehicles (
+        id,
+        make,
+        model,
+        year,
+        color,
+        plate_number,
+        ride_category
+      )
+    `)
+    .eq("ride_id", rideId)
+    .eq("offer_status", "pending")
+    .gt("expires_at", now)
+    .order("offered_fare", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return {
+    ride,
+    offers: data ?? [],
+  };
+}
+
+export async function acceptPassengerDriverOffer(
+  passengerId: string,
+  offerId: string,
+) {
+  const { data: rideId, error: rpcError } = await supabaseAdmin.rpc(
+    "accept_safari_driver_offer",
+    {
+      p_offer_id: offerId,
+      p_passenger_id: passengerId,
+    },
+  );
+
+  if (rpcError || !rideId) {
+    throw new Error(
+      rpcError?.message ?? "Safari could not accept the driver offer.",
+    );
+  }
+
+  const { data: ride, error: rideError } = await supabaseAdmin
+    .from("rides")
+    .select(`
+      *,
+      ride_categories (
+        code,
+        name,
+        vehicle_type,
+        service_tier
+      )
+    `)
+    .eq("id", rideId)
+    .single();
+
+  if (rideError || !ride) throw new Error("Safari ride could not be loaded.");
+
+  await Promise.all([
+    supabaseAdmin.from("notifications").insert({
+      user_id: ride.driver_id,
+      notification_type: "driver_offer_accepted",
+      title: "Passenger accepted your offer",
+      body: `Your PKR ${Number(ride.agreed_fare ?? 0).toLocaleString("en-PK")} offer was accepted.`,
+      data: { rideId: ride.id },
+      is_read: false,
+    }),
+
+    supabaseAdmin.from("ride_status_events").insert({
+      ride_id: ride.id,
+      from_status: "searching",
+      to_status: "driver_assigned",
+      actor_type: "passenger",
+      actor_user_id: passengerId,
+      note: "Passenger accepted a driver fare offer.",
+    }),
+  ]);
+
+  return ride;
+}
+
+export async function rejectRideRequest(
+  driverId: string,
+  invitationId: string,
+  reason?: string | null,
+) {
   const { data, error } = await supabaseAdmin
     .from("ride_match_requests")
     .update({
       match_status: "rejected",
       rejection_reason: reason ?? null,
-      responded_at: now,
-      updated_at: now,
+      responded_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
-    .eq("id", offerId)
+    .eq("id", invitationId)
     .eq("driver_id", driverId)
     .eq("match_status", "offered")
     .select("*")

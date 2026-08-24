@@ -17,6 +17,7 @@ import { adminFoodRouter } from "../modules/admin/food.routes.js";
 import { commerceRouter } from "../modules/commerce/commerce.routes.js";
 import { adminCommerceRouter } from "../modules/admin/commerce.routes.js";
 import { servicesRouter } from "../modules/services/services.routes.js";
+import { deliveryRouter } from "../modules/delivery/delivery.routes.js";
 import { adminServicesRouter } from "../modules/admin/services.routes.js";
 import { merchantRouter } from "../modules/merchants/merchant.routes.js";
 import { adminMerchantsRouter } from "../modules/admin/merchants.routes.js";
@@ -54,6 +55,7 @@ apiRouter.use("/admin/food", adminFoodRouter);
 apiRouter.use("/commerce", commerceRouter);
 apiRouter.use("/admin/commerce", adminCommerceRouter);
 apiRouter.use("/services", servicesRouter);
+apiRouter.use("/delivery", deliveryRouter);
 apiRouter.use("/admin/services", adminServicesRouter);
 
 apiRouter.use("/merchants", merchantRouter);

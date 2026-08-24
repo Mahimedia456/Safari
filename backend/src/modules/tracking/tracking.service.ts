@@ -269,14 +269,42 @@ export async function transitionDriverRide(
 
   if (error) throw new Error(error.message);
 
-  await supabaseAdmin.from("ride_status_events").insert({
-    ride_id: rideId,
-    from_status: ride.ride_status,
-    to_status: targetStatus,
-    actor_type: "driver",
-    actor_user_id: driverId,
-    note: `Driver changed ride status to ${targetStatus}.`,
-  });
+  await Promise.all([
+    supabaseAdmin.from("ride_status_events").insert({
+      ride_id: rideId,
+      from_status: ride.ride_status,
+      to_status: targetStatus,
+      actor_type: "driver",
+      actor_user_id: driverId,
+      note: `Driver changed ride status to ${targetStatus}.`,
+    }),
+
+    supabaseAdmin.from("notifications").insert({
+      user_id: ride.passenger_id,
+      notification_type: `ride_${targetStatus}`,
+      title:
+        targetStatus === "driver_arriving"
+          ? "Your Safari driver is on the way"
+          : targetStatus === "driver_arrived"
+            ? "Your Safari driver has arrived"
+            : targetStatus === "in_progress"
+              ? "Your Safari trip has started"
+              : "Your Safari trip is complete",
+      body:
+        targetStatus === "driver_arriving"
+          ? "Track your driver live in Safari."
+          : targetStatus === "driver_arrived"
+            ? "Meet your driver at the pickup point."
+            : targetStatus === "in_progress"
+              ? "You are now on the way to your destination."
+              : "Thanks for riding with Safari.",
+      data: {
+        rideId,
+        status: targetStatus,
+      },
+      is_read: false,
+    }),
+  ]);
 
   if (targetStatus === "completed") {
     await Promise.all([

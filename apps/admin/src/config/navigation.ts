@@ -116,6 +116,18 @@ const adminNavigation: NavigationSection[] = [
       },
 
       {
+        label: "Driver Offers",
+        path: "/rides/offers",
+        icon: CircleDollarSign,
+      },
+
+      {
+        label: "Delivery Jobs",
+        path: "/rides/deliveries",
+        icon: PackageOpen,
+      },
+
+      {
         label: "Dispatch",
         path: "/rides/dispatch",
         icon: CarFront,

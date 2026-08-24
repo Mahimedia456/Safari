@@ -42,6 +42,8 @@ const envSchema = z.object({
     .min(8)
     .default("safarimobile"),
 
+  GOOGLE_MAPS_API_KEY: z.string().min(10).optional(),
+
   API_SMOKE_BASE_URL: z.string().url().optional(),
 });
 

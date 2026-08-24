@@ -85,7 +85,7 @@ export async function createSavedAddress(
     city: string;
     area?: string | null;
     postalCode?: string | null;
-    countryCode: "PK" | "DE";
+    countryCode: "PK";
     latitude?: number | null;
     longitude?: number | null;
     instructions?: string | null;
@@ -245,4 +245,319 @@ export async function deleteEmergencyContact(
     .eq("user_id", userId);
 
   if (error) throw new Error(error.message);
+}
+
+
+type PassengerActivityType =
+  | "ride"
+  | "food"
+  | "grocery"
+  | "pharmacy"
+  | "service";
+
+function toNumber(value: unknown) {
+  const number = Number(value ?? 0);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function firstText(
+  ...values: unknown[]
+) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+export async function getPassengerActivity(
+  userId: string,
+) {
+  const [
+    ridesResult,
+    foodResult,
+    commerceResult,
+    servicesResult,
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("rides")
+      .select("*")
+      .eq("passenger_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100),
+
+    supabaseAdmin
+      .from("food_orders")
+      .select("*")
+      .eq("passenger_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100),
+
+    supabaseAdmin
+      .from("commerce_orders")
+      .select("*")
+      .eq("passenger_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100),
+
+    supabaseAdmin
+      .from("service_bookings")
+      .select(`
+        *,
+        service_providers (
+          business_name
+        ),
+        provider_services (
+          name
+        )
+      `)
+      .eq("customer_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ]);
+
+  for (const result of [
+    ridesResult,
+    foodResult,
+    commerceResult,
+    servicesResult,
+  ]) {
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+  }
+
+  const activity = [
+    ...(ridesResult.data ?? []).map((row: any) => ({
+      id: row.id,
+      type: "ride" as const,
+      reference: row.ride_number ?? row.id,
+      title: "Safari Ride",
+      subtitle:
+        firstText(row.dropoff_address, row.pickup_address) ||
+        "Safari ride",
+      status: row.ride_status ?? "requested",
+      amount: toNumber(
+        row.agreed_fare ??
+        row.final_fare ??
+        row.estimated_fare,
+      ),
+      currencyCode: row.currency_code ?? "PKR",
+      createdAt: row.created_at,
+      completedAt: row.completed_at ?? null,
+    })),
+
+    ...(foodResult.data ?? []).map((row: any) => ({
+      id: row.id,
+      type: "food" as const,
+      reference: row.order_number ?? row.id,
+      title: "Safari Food",
+      subtitle: firstText(row.delivery_address) || "Food order",
+      status: row.status ?? "placed",
+      amount: toNumber(row.total),
+      currencyCode: row.currency_code ?? "PKR",
+      createdAt: row.created_at,
+      completedAt: row.delivered_at ?? null,
+    })),
+
+    ...(commerceResult.data ?? []).map((row: any) => ({
+      id: row.id,
+      type:
+        row.order_type === "pharmacy"
+          ? ("pharmacy" as const)
+          : ("grocery" as const),
+      reference: row.order_number ?? row.id,
+      title:
+        row.order_type === "pharmacy"
+          ? "Safari Pharmacy"
+          : "Safari Grocery",
+      subtitle:
+        firstText(row.delivery_address) ||
+        "Safari order",
+      status: row.status ?? "placed",
+      amount: toNumber(row.total),
+      currencyCode: row.currency_code ?? "PKR",
+      createdAt: row.created_at,
+      completedAt: row.delivered_at ?? null,
+    })),
+
+    ...(servicesResult.data ?? []).map((row: any) => ({
+      id: row.id,
+      type: "service" as const,
+      reference: row.booking_number ?? row.id,
+      title:
+        row.provider_services?.name ??
+        "Safari Service",
+      subtitle:
+        firstText(
+          row.service_providers?.business_name,
+          row.service_address,
+        ) || "Service booking",
+      status: row.booking_status ?? "requested",
+      amount: toNumber(row.total_amount),
+      currencyCode: row.currency_code ?? "PKR",
+      createdAt: row.created_at,
+      completedAt: row.completed_at ?? null,
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() -
+      new Date(a.createdAt).getTime(),
+  );
+
+  return activity;
+}
+
+export async function getPassengerActivityDetail(
+  userId: string,
+  type: PassengerActivityType,
+  id: string,
+) {
+  if (type === "ride") {
+    const { data, error } = await supabaseAdmin
+      .from("rides")
+      .select("*")
+      .eq("id", id)
+      .eq("passenger_id", userId)
+      .single();
+
+    if (error || !data) {
+      throw new Error("Safari ride activity was not found.");
+    }
+
+    return {
+      id: data.id,
+      type,
+      reference: data.ride_number ?? data.id,
+      title: "Safari Ride",
+      status: data.ride_status ?? "requested",
+      amount: toNumber(
+        data.agreed_fare ??
+        data.final_fare ??
+        data.estimated_fare,
+      ),
+      currencyCode: data.currency_code ?? "PKR",
+      createdAt: data.created_at,
+      completedAt: data.completed_at ?? null,
+      pickup: data.pickup_address ?? null,
+      destination: data.dropoff_address ?? null,
+      paymentMethod: data.payment_method ?? null,
+      raw: data,
+    };
+  }
+
+  if (type === "food") {
+    const { data, error } = await supabaseAdmin
+      .from("food_orders")
+      .select(`
+        *,
+        food_restaurants (
+          name
+        )
+      `)
+      .eq("id", id)
+      .eq("passenger_id", userId)
+      .single();
+
+    if (error || !data) {
+      throw new Error("Safari Food activity was not found.");
+    }
+
+    return {
+      id: data.id,
+      type,
+      reference: data.order_number ?? data.id,
+      title: "Safari Food",
+      status: data.status ?? "placed",
+      amount: toNumber(data.total),
+      currencyCode: data.currency_code ?? "PKR",
+      createdAt: data.created_at,
+      completedAt: data.delivered_at ?? null,
+      merchantName: data.food_restaurants?.name ?? null,
+      deliveryAddress: data.delivery_address ?? null,
+      paymentMethod: data.payment_method ?? null,
+      raw: data,
+    };
+  }
+
+  if (
+    type === "grocery" ||
+    type === "pharmacy"
+  ) {
+    const { data, error } = await supabaseAdmin
+      .from("commerce_orders")
+      .select(`
+        *,
+        commerce_stores (
+          name
+        )
+      `)
+      .eq("id", id)
+      .eq("passenger_id", userId)
+      .eq("order_type", type)
+      .single();
+
+    if (error || !data) {
+      throw new Error("Safari order activity was not found.");
+    }
+
+    return {
+      id: data.id,
+      type,
+      reference: data.order_number ?? data.id,
+      title:
+        type === "pharmacy"
+          ? "Safari Pharmacy"
+          : "Safari Grocery",
+      status: data.status ?? "placed",
+      amount: toNumber(data.total),
+      currencyCode: data.currency_code ?? "PKR",
+      createdAt: data.created_at,
+      completedAt: data.delivered_at ?? null,
+      merchantName: data.commerce_stores?.name ?? null,
+      deliveryAddress: data.delivery_address ?? null,
+      paymentMethod: data.payment_method ?? null,
+      raw: data,
+    };
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("service_bookings")
+    .select(`
+      *,
+      service_providers (
+        business_name
+      ),
+      provider_services (
+        name
+      )
+    `)
+    .eq("id", id)
+    .eq("customer_id", userId)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Safari service activity was not found.");
+  }
+
+  return {
+    id: data.id,
+    type: "service" as const,
+    reference: data.booking_number ?? data.id,
+    title:
+      data.provider_services?.name ??
+      "Safari Service",
+    status: data.booking_status ?? "requested",
+    amount: toNumber(data.total_amount),
+    currencyCode: data.currency_code ?? "PKR",
+    createdAt: data.created_at,
+    completedAt: data.completed_at ?? null,
+    providerName:
+      data.service_providers?.business_name ?? null,
+    serviceAddress: data.service_address ?? null,
+    paymentMethod: data.payment_method ?? null,
+    raw: data,
+  };
 }

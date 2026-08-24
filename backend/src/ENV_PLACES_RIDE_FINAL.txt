@@ -1,0 +1,8 @@
+# Optional but recommended for Google-quality place search:
+GOOGLE_MAPS_API_KEY=YOUR_SERVER_SIDE_GOOGLE_MAPS_API_KEY
+
+# The key belongs only in the backend/Vercel environment.
+# Do NOT expose it as EXPO_PUBLIC_*.
+
+# Without this key Safari automatically falls back to
+# English Pakistan-only OpenStreetMap/Nominatim search.

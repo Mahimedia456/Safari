@@ -11,6 +11,11 @@ import {
   listProviders,
   listServiceBookings,
   listServiceCategories,
+  listAvailableServiceJobs,
+  listWorkerServiceJobs,
+  acceptServiceJob,
+  updateWorkerServiceStatus,
+  getCustomerServiceTracking,
 } from "./services.service.js";
 
 export const servicesRouter = Router();
@@ -18,6 +23,119 @@ export const servicesRouter = Router();
 servicesRouter.use(
   requireAuth,
   requireAccountTypes("passenger", "driver", "delivery_partner"),
+);
+
+
+servicesRouter.get(
+  "/worker/jobs",
+  requireAccountTypes("driver", "delivery_partner"),
+  async (req, res, next) => {
+    try {
+      const jobs = await listAvailableServiceJobs();
+
+      res.json({
+        success: true,
+        data: { jobs, total: jobs.length },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+servicesRouter.get(
+  "/worker/me/jobs",
+  requireAccountTypes("driver", "delivery_partner"),
+  async (req, res, next) => {
+    try {
+      const jobs = await listWorkerServiceJobs(req.authUser!.id);
+
+      res.json({
+        success: true,
+        data: { jobs, total: jobs.length },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+servicesRouter.post(
+  "/worker/jobs/:bookingId/accept",
+  requireAccountTypes("driver", "delivery_partner"),
+  async (req, res, next) => {
+    try {
+      const bookingId = z.string().uuid().parse(req.params.bookingId);
+
+      const booking = await acceptServiceJob(
+        req.authUser!.id,
+        bookingId,
+      );
+
+      res.json({
+        success: true,
+        data: { booking },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+servicesRouter.post(
+  "/worker/jobs/:bookingId/status",
+  requireAccountTypes("driver", "delivery_partner"),
+  async (req, res, next) => {
+    try {
+      const bookingId = z.string().uuid().parse(req.params.bookingId);
+
+      const input = z
+        .object({
+          status: z.enum([
+            "on_the_way",
+            "arrived",
+            "in_progress",
+            "completed",
+          ]),
+        })
+        .parse(req.body);
+
+      const booking = await updateWorkerServiceStatus(
+        req.authUser!.id,
+        bookingId,
+        input.status,
+      );
+
+      res.json({
+        success: true,
+        data: { booking },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+servicesRouter.get(
+  "/bookings/:bookingId/tracking",
+  requireAccountTypes("passenger"),
+  async (req, res, next) => {
+    try {
+      const bookingId = z.string().uuid().parse(req.params.bookingId);
+
+      const data = await getCustomerServiceTracking(
+        req.authUser!.id,
+        bookingId,
+      );
+
+      res.json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 );
 
 servicesRouter.get("/categories", async (_req, res, next) => {

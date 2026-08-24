@@ -173,3 +173,73 @@ export async function getRideRatings(
   if (error) throw new Error(error.message);
   return data;
 }
+
+
+export async function submitExperienceRating(
+  customerId: string,
+  type: "food" | "grocery" | "pharmacy" | "service",
+  sourceId: string,
+  input: {
+    rating: number;
+    comment?: string | null;
+    tags?: string[];
+  },
+) {
+  if (type === "food") {
+    const result = await supabaseAdmin
+      .from("food_orders")
+      .select("id,status")
+      .eq("id", sourceId)
+      .eq("passenger_id", customerId)
+      .single();
+
+    if (result.error || result.data?.status !== "delivered") {
+      throw new Error("Only delivered Safari Food orders can be rated.");
+    }
+  } else if (type === "grocery" || type === "pharmacy") {
+    const result = await supabaseAdmin
+      .from("commerce_orders")
+      .select("id,status,order_type")
+      .eq("id", sourceId)
+      .eq("passenger_id", customerId)
+      .eq("order_type", type)
+      .single();
+
+    if (result.error || result.data?.status !== "delivered") {
+      throw new Error("Only delivered Safari orders can be rated.");
+    }
+  } else {
+    const result = await supabaseAdmin
+      .from("service_bookings")
+      .select("id,booking_status")
+      .eq("id", sourceId)
+      .eq("customer_id", customerId)
+      .single();
+
+    if (result.error || result.data?.booking_status !== "completed") {
+      throw new Error("Only completed Safari services can be rated.");
+    }
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("experience_ratings")
+    .upsert(
+      {
+        customer_id: customerId,
+        experience_type: type,
+        source_id: sourceId,
+        rating: input.rating,
+        comment: input.comment ?? null,
+        tags: input.tags ?? [],
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "customer_id,experience_type,source_id",
+      },
+    )
+    .select("*")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}

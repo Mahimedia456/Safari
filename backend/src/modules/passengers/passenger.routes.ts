@@ -9,6 +9,8 @@ import {
   deleteEmergencyContact,
   deleteSavedAddress,
   getPassengerOverview,
+  getPassengerActivity,
+  getPassengerActivityDetail,
   listEmergencyContacts,
   listSavedAddresses,
   updatePassengerProfile,
@@ -43,7 +45,7 @@ passengerRouter.patch("/me", async (req, res, next) => {
           .enum(["male", "female", "other", "prefer_not_to_say"])
           .nullable()
           .optional(),
-        preferredLanguage: z.enum(["en", "ur", "de"]).optional(),
+        preferredLanguage: z.literal("en").optional(),
         marketingOptIn: z.boolean().optional(),
         isOnboarded: z.boolean().optional(),
       })
@@ -73,6 +75,50 @@ passengerRouter.patch("/me", async (req, res, next) => {
   }
 });
 
+
+passengerRouter.get("/activity", async (req, res, next) => {
+  try {
+    const activity = await getPassengerActivity(req.authUser!.id);
+
+    res.json({
+      success: true,
+      data: { activity },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+passengerRouter.get(
+  "/activity/:type/:activityId",
+  async (req, res, next) => {
+    try {
+      const type = z
+        .enum(["ride", "food", "grocery", "pharmacy", "service"])
+        .parse(req.params.type);
+
+      const activityId = z
+        .string()
+        .uuid()
+        .parse(req.params.activityId);
+
+      const activity =
+        await getPassengerActivityDetail(
+          req.authUser!.id,
+          type,
+          activityId,
+        );
+
+      res.json({
+        success: true,
+        data: { activity },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 passengerRouter.get("/addresses", async (req, res, next) => {
   try {
     const addresses = await listSavedAddresses(req.authUser!.id);
@@ -91,7 +137,7 @@ passengerRouter.post("/addresses", async (req, res, next) => {
         city: z.string().trim().min(2).max(100),
         area: z.string().trim().max(120).nullable().optional(),
         postalCode: z.string().trim().max(20).nullable().optional(),
-        countryCode: z.enum(["PK", "DE"]).default("PK"),
+        countryCode: z.literal("PK").default("PK"),
         latitude: z.number().nullable().optional(),
         longitude: z.number().nullable().optional(),
         instructions: z.string().trim().max(300).nullable().optional(),
@@ -117,7 +163,7 @@ passengerRouter.patch("/addresses/:addressId", async (req, res, next) => {
         city: z.string().trim().min(2).max(100).optional(),
         area: z.string().trim().max(120).nullable().optional(),
         postalCode: z.string().trim().max(20).nullable().optional(),
-        countryCode: z.enum(["PK", "DE"]).optional(),
+        countryCode: z.literal("PK").optional(),
         latitude: z.number().nullable().optional(),
         longitude: z.number().nullable().optional(),
         instructions: z.string().trim().max(300).nullable().optional(),
@@ -169,7 +215,7 @@ passengerRouter.patch("/preferences", async (req, res, next) => {
     const input = z
       .object({
         theme: z.enum(["system", "light", "dark"]).optional(),
-        language: z.enum(["en", "ur", "de"]).optional(),
+        language: z.literal("en").optional(),
         rideUpdates: z.boolean().optional(),
         orderUpdates: z.boolean().optional(),
         promotionNotifications: z.boolean().optional(),

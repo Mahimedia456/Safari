@@ -135,6 +135,8 @@ import RideDispatchPage from "../pages/rides/RideDispatchPage";
 import ScheduledRidesPage from "../pages/rides/ScheduledRidesPage";
 import CancelledRidesPage from "../pages/rides/CancelledRidesPage";
 import RideIncidentsPage from "../pages/rides/RideIncidentsPage";
+import DriverOffersPage from "../pages/rides/DriverOffersPage";
+import DeliveryJobsPage from "../pages/rides/DeliveryJobsPage";
 
 /* ======================================================
    PRICING
@@ -937,6 +939,26 @@ export const router =
           element: (
             <RoleRouteGuard>
               <RideIncidentsPage />
+            </RoleRouteGuard>
+          ),
+        },
+
+        {
+          path: "rides/offers",
+
+          element: (
+            <RoleRouteGuard>
+              <DriverOffersPage />
+            </RoleRouteGuard>
+          ),
+        },
+
+        {
+          path: "rides/deliveries",
+
+          element: (
+            <RoleRouteGuard>
+              <DeliveryJobsPage />
             </RoleRouteGuard>
           ),
         },
