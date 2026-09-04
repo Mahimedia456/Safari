@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../../lib/supabase.js";
+﻿import { supabaseAdmin } from "../../lib/supabase.js";
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -68,7 +68,11 @@ export async function startRideMatching(
     throw new Error("This Safari ride is not accepting driver offers.");
   }
 
-  const categoryCode = ride.ride_categories?.code;
+  const rideCategory = Array.isArray(ride.ride_categories)
+    ? ride.ride_categories[0] ?? null
+    : ride.ride_categories ?? null;
+
+  const categoryCode = rideCategory?.code;
   if (!categoryCode) throw new Error("Safari ride category is unavailable.");
 
   const settings = await offerSettings(ride.city_id);
@@ -134,7 +138,7 @@ export async function startRideMatching(
 
   const selected = candidates.slice(0, settings.maxOffers);
   const expiresAt = new Date(
-    Date.now() + settings.expirySeconds * 1000,
+    Date.now() + Math.max(settings.expirySeconds, 180) * 1000,
   ).toISOString();
 
   const rows = selected.map((candidate) => ({
@@ -295,7 +299,7 @@ export async function submitDriverFareOffer(
   }
 
   const expiresAt = new Date(
-    Date.now() + settings.expirySeconds * 1000,
+    Date.now() + Math.max(settings.expirySeconds, 180) * 1000,
   ).toISOString();
 
   const { data: offer, error: offerError } = await supabaseAdmin
@@ -362,9 +366,13 @@ export async function listPassengerDriverOffers(
 
   if (rideError || !ride) throw new Error("Safari ride not found.");
 
+  if (!["requested", "searching", "driver_assigned"].includes(ride.ride_status)) {
+    return { ride, offers: [] };
+  }
+
   const now = new Date().toISOString();
 
-  await supabaseAdmin
+  const expireResult = await supabaseAdmin
     .from("ride_driver_offers")
     .update({
       offer_status: "expired",
@@ -375,53 +383,109 @@ export async function listPassengerDriverOffers(
     .eq("offer_status", "pending")
     .lt("expires_at", now);
 
-  const { data, error } = await supabaseAdmin
+  if (expireResult.error) throw new Error(expireResult.error.message);
+
+  // Do not rely on PostgREST relationship names here. Some Safari DB
+  // revisions do not expose ride_driver_offers -> profiles as an embedded
+  // relationship, which made this endpoint fail while the driver offer row
+  // itself existed. Fetch the offer rows first, then hydrate them explicitly.
+  const { data: offerRows, error: offersError } = await supabaseAdmin
     .from("ride_driver_offers")
-    .select(`
-      *,
-      profiles!ride_driver_offers_driver_id_fkey (
-        id,
-        full_name,
-        avatar_url,
-        average_rating,
-        rating_count
-      ),
-      driver_vehicles (
-        id,
-        make,
-        model,
-        year,
-        color,
-        plate_number,
-        ride_category
-      )
-    `)
+    .select("*")
     .eq("ride_id", rideId)
     .eq("offer_status", "pending")
     .gt("expires_at", now)
     .order("offered_fare", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (offersError) throw new Error(offersError.message);
 
-  return {
-    ride,
-    offers: data ?? [],
-  };
+  const offers = await Promise.all(
+    (offerRows ?? []).map(async (offer) => {
+      const [profileResult, vehicleResult] = await Promise.all([
+        supabaseAdmin
+          .from("profiles")
+          .select("id,full_name,avatar_url,average_rating,rating_count,phone")
+          .eq("id", offer.driver_id)
+          .maybeSingle(),
+        offer.vehicle_id
+          ? supabaseAdmin
+              .from("driver_vehicles")
+              .select("id,make,model,year,color,plate_number,ride_category,vehicle_type")
+              .eq("id", offer.vehicle_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+
+      if (profileResult.error) throw new Error(profileResult.error.message);
+      if (vehicleResult.error) throw new Error(vehicleResult.error.message);
+
+      return {
+        ...offer,
+        profiles: profileResult.data ?? null,
+        driver_vehicles: vehicleResult.data ?? null,
+      };
+    }),
+  );
+
+  return { ride, offers };
 }
 
 export async function acceptPassengerDriverOffer(
   passengerId: string,
+  rideId: string,
   offerId: string,
 ) {
-  const { data: rideId, error: rpcError } = await supabaseAdmin.rpc(
+  // Validate all three identities before the atomic DB operation. This blocks
+  // stale offer IDs and offers belonging to another passenger/ride.
+  const { data: rideBefore, error: rideBeforeError } = await supabaseAdmin
+    .from("rides")
+    .select("id,passenger_id,ride_status,driver_id")
+    .eq("id", rideId)
+    .eq("passenger_id", passengerId)
+    .single();
+
+  if (rideBeforeError || !rideBefore) throw new Error("Safari ride not found.");
+
+  if (!["requested", "searching"].includes(rideBefore.ride_status)) {
+    if (rideBefore.ride_status === "driver_assigned" && rideBefore.driver_id) {
+      const { data: alreadyAssigned, error: assignedError } = await supabaseAdmin
+        .from("rides")
+        .select(`*, ride_categories (code,name,vehicle_type,service_tier)`)
+        .eq("id", rideId)
+        .single();
+      if (assignedError || !alreadyAssigned) throw new Error("Safari ride could not be loaded.");
+      return alreadyAssigned;
+    }
+    throw new Error("This Safari ride is no longer accepting driver offers.");
+  }
+
+  const { data: offerBefore, error: offerBeforeError } = await supabaseAdmin
+    .from("ride_driver_offers")
+    .select("id,ride_id,driver_id,vehicle_id,offered_fare,offer_status,expires_at")
+    .eq("id", offerId)
+    .eq("ride_id", rideId)
+    .single();
+
+  if (offerBeforeError || !offerBefore) {
+    throw new Error("This driver offer does not belong to this Safari ride.");
+  }
+  if (offerBefore.offer_status !== "pending") {
+    throw new Error("This Safari driver offer is no longer pending.");
+  }
+  if (new Date(offerBefore.expires_at).getTime() <= Date.now()) {
+    throw new Error("This Safari driver offer has expired.");
+  }
+
+  const { data: acceptedRideId, error: rpcError } = await supabaseAdmin.rpc(
     "accept_safari_driver_offer",
     {
       p_offer_id: offerId,
       p_passenger_id: passengerId,
+      p_ride_id: rideId,
     },
   );
 
-  if (rpcError || !rideId) {
+  if (rpcError || !acceptedRideId) {
     throw new Error(
       rpcError?.message ?? "Safari could not accept the driver offer.",
     );
@@ -438,30 +502,28 @@ export async function acceptPassengerDriverOffer(
         service_tier
       )
     `)
-    .eq("id", rideId)
+    .eq("id", acceptedRideId)
+    .eq("passenger_id", passengerId)
     .single();
 
   if (rideError || !ride) throw new Error("Safari ride could not be loaded.");
 
-  await Promise.all([
-    supabaseAdmin.from("notifications").insert({
+  // Notifications are deliberately outside the transaction: notification
+  // failure must never roll back or make a successfully accepted ride look
+  // failed to the passenger.
+  if (ride.driver_id) {
+    const notificationResult = await supabaseAdmin.from("notifications").insert({
       user_id: ride.driver_id,
       notification_type: "driver_offer_accepted",
       title: "Passenger accepted your offer",
       body: `Your PKR ${Number(ride.agreed_fare ?? 0).toLocaleString("en-PK")} offer was accepted.`,
-      data: { rideId: ride.id },
+      data: { rideId: ride.id, offerId },
       is_read: false,
-    }),
-
-    supabaseAdmin.from("ride_status_events").insert({
-      ride_id: ride.id,
-      from_status: "searching",
-      to_status: "driver_assigned",
-      actor_type: "passenger",
-      actor_user_id: passengerId,
-      note: "Passenger accepted a driver fare offer.",
-    }),
-  ]);
+    });
+    if (notificationResult.error) {
+      console.error("[Safari Matching] accepted-offer notification failed", notificationResult.error.message);
+    }
+  }
 
   return ride;
 }
@@ -488,3 +550,144 @@ export async function rejectRideRequest(
   if (error) throw new Error(error.message);
   return data;
 }
+
+
+export async function listNearbyDriversForRide(
+  passengerId: string,
+  rideId: string,
+) {
+  const { data: ride, error: rideError } = await supabaseAdmin
+    .from("rides")
+    .select(`
+      id,
+      passenger_id,
+      pickup_latitude,
+      pickup_longitude,
+      ride_status,
+      ride_categories (
+        code,
+        name,
+        vehicle_type,
+        service_tier
+      )
+    `)
+    .eq("id", rideId)
+    .eq("passenger_id", passengerId)
+    .single();
+
+  if (rideError || !ride) {
+    throw new Error("Safari ride was not found.");
+  }
+
+  const categoryCode = ride.ride_categories?.[0]?.code ?? null;
+
+  if (!categoryCode) {
+    throw new Error("Safari ride category is unavailable.");
+  }
+
+  const { data: drivers, error: driversError } = await supabaseAdmin
+    .from("driver_profiles")
+    .select("user_id")
+    .eq("onboarding_status", "approved")
+    .eq("verification_status", "verified")
+    .eq("is_online", true)
+    .eq("is_available", true);
+
+  if (driversError) {
+    throw new Error(driversError.message);
+  }
+
+  const nearby: any[] = [];
+
+  for (const driver of drivers ?? []) {
+    const [
+      vehicleResult,
+      locationResult,
+      profileResult,
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("driver_vehicles")
+        .select(
+          "id,make,model,color,plate_number,vehicle_type,ride_category,verification_status",
+        )
+        .eq("driver_id", driver.user_id)
+        .eq("is_primary", true)
+        .eq("is_active", true)
+        .eq("verification_status", "verified")
+        .eq("ride_category", categoryCode)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("driver_locations")
+        .select(
+          "driver_id,latitude,longitude,heading,updated_at,is_online",
+        )
+        .eq("driver_id", driver.user_id)
+        .eq("is_online", true)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("profiles")
+        .select(
+          "id,full_name,average_rating,rating_count",
+        )
+        .eq("id", driver.user_id)
+        .maybeSingle(),
+    ]);
+
+    if (vehicleResult.error) {
+      throw new Error(vehicleResult.error.message);
+    }
+
+    if (locationResult.error) {
+      throw new Error(locationResult.error.message);
+    }
+
+    if (profileResult.error) {
+      throw new Error(profileResult.error.message);
+    }
+
+    const vehicle = vehicleResult.data;
+    const location = locationResult.data;
+
+    if (!vehicle || !location) continue;
+
+    const distanceKm = haversineKm(
+      Number(location.latitude),
+      Number(location.longitude),
+      Number(ride.pickup_latitude),
+      Number(ride.pickup_longitude),
+    );
+
+    if (distanceKm > 15) continue;
+
+    nearby.push({
+      driverId: driver.user_id,
+      latitude: Number(location.latitude),
+      longitude: Number(location.longitude),
+      heading: Number(location.heading ?? 0),
+      distanceKm:
+        Math.round(distanceKm * 100) / 100,
+      estimatedPickupMinutes:
+        Math.max(
+          1,
+          Math.round((distanceKm / 24) * 60),
+        ),
+      vehicleType:
+        vehicle.vehicle_type ??
+        ride.ride_categories?.[0]?.vehicle_type ??
+        "car",
+      rideCategory: vehicle.ride_category,
+      vehicle,
+      profile: profileResult.data ?? null,
+    });
+  }
+
+  nearby.sort(
+    (a, b) =>
+      a.distanceKm - b.distanceKm,
+  );
+
+  return nearby.slice(0, 30);
+}
+

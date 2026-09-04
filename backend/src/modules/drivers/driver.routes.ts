@@ -98,14 +98,12 @@ driverRouter.post("/vehicles", async (req, res, next) => {
         year: z.number().int().min(1990).max(2100),
         color: z.string().trim().min(2).max(40),
         plateNumber: z.string().trim().min(3).max(30),
-        vehicleType: z.enum(["car", "bike", "rickshaw", "van"]),
+        vehicleType: z.enum(["car", "bike", "rickshaw"]),
         rideCategory: z.enum([
           "economy",
-          "comfort",
           "premium",
           "bike",
           "rickshaw",
-          "xl",
         ]),
         seats: z.number().int().min(1).max(12),
         registrationNumber: z.string().trim().max(60).nullable().optional(),
@@ -138,9 +136,9 @@ driverRouter.patch("/vehicles/:vehicleId", async (req, res, next) => {
         year: z.number().int().min(1990).max(2100).optional(),
         color: z.string().trim().min(2).max(40).optional(),
         plateNumber: z.string().trim().min(3).max(30).optional(),
-        vehicleType: z.enum(["car", "bike", "rickshaw", "van"]).optional(),
+        vehicleType: z.enum(["car", "bike", "rickshaw"]).optional(),
         rideCategory: z
-          .enum(["economy", "comfort", "premium", "bike", "rickshaw", "xl"])
+          .enum(["economy", "premium", "bike", "rickshaw"])
           .optional(),
         seats: z.number().int().min(1).max(12).optional(),
         registrationNumber: z.string().trim().max(60).nullable().optional(),

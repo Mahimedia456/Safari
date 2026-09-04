@@ -88,7 +88,7 @@ trackingRouter.post(
             "in_progress",
             "completed",
           ]),
-          startOtp: z.string().trim().max(10).nullable().optional(),
+          startOtp: z.string().trim().regex(/^\d{4}$/).nullable().optional(),
           latitude: z.number().nullable().optional(),
           longitude: z.number().nullable().optional(),
         })

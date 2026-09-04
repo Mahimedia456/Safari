@@ -365,6 +365,43 @@ async function upsertMobileProfile(
   }
 }
 
+
+async function ensureMobileDriverProfile(
+  userId: string,
+  mode: "passenger" | "driver",
+) {
+  if (mode !== "driver") return;
+
+  const { data: existing, error: findError } =
+    await supabaseAdmin
+      .from("driver_profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+  if (findError) {
+    throw new Error(findError.message);
+  }
+
+  if (existing) return;
+
+  const { error } =
+    await supabaseAdmin
+      .from("driver_profiles")
+      .insert({
+        user_id: userId,
+        onboarding_status: "draft",
+        verification_status: "not_submitted",
+        is_online: false,
+        is_available: false,
+        driving_experience_years: 0,
+      });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function registerMobile(
   input: MobileRegisterInput,
 ) {
@@ -517,6 +554,15 @@ export async function registerMobile(
       throw profileError;
     }
   }
+
+  if (!userId) {
+    throw new Error("Safari mobile account could not be created.");
+  }
+
+  await ensureMobileDriverProfile(
+    userId,
+    input.mode,
+  );
 
   const otp =
     await createAndSendOtp(

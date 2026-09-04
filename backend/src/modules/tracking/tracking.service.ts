@@ -90,23 +90,57 @@ export async function getActiveRideForDriver(driverId: string) {
   const { data, error } = await supabaseAdmin
     .from("rides")
     .select(`
-      *,
+      id,
+      passenger_id,
+      driver_id,
+      vehicle_id,
+      ride_category_id,
+      service_city_id,
+      ride_number,
+      booking_type,
+      ride_status,
+      pickup_address,
+      pickup_latitude,
+      pickup_longitude,
+      dropoff_address,
+      dropoff_latitude,
+      dropoff_longitude,
+      estimated_distance_km,
+      estimated_duration_minutes,
+      estimated_fare,
+      agreed_fare,
+      final_fare,
+      currency_code,
+      payment_method,
+      payment_status,
+      created_at,
+      driver_arrived_at,
+      started_at,
+      completed_at,
       profiles!rides_passenger_id_fkey (
         id,
         full_name,
         phone,
-        avatar_url
+        avatar_url,
+        average_rating,
+        rating_count
       ),
       ride_categories (
         code,
-        name
+        name,
+        vehicle_type,
+        service_tier
       ),
       driver_vehicles (
         id,
         make,
         model,
+        year,
         color,
-        plate_number
+        plate_number,
+        vehicle_type,
+        ride_category,
+        verification_status
       )
     `)
     .eq("driver_id", driverId)
@@ -121,6 +155,12 @@ export async function getActiveRideForDriver(driverId: string) {
     .maybeSingle();
 
   if (error) throw new Error(error.message);
+
+  /*
+   * Driver must never receive the passenger start OTP
+   * through the active-ride payload.
+   * OTP is verified server-side only during the in_progress transition.
+   */
   return data;
 }
 
@@ -131,17 +171,17 @@ export async function getActiveRideForPassenger(passengerId: string) {
       *,
       ride_categories (
         code,
-        name
-      ),
-      service_cities (
         name,
-        city_code
+        vehicle_type,
+        service_tier
       ),
       profiles!rides_driver_id_fkey (
         id,
         full_name,
         phone,
-        avatar_url
+        avatar_url,
+        average_rating,
+        rating_count
       ),
       driver_vehicles (
         id,
@@ -149,7 +189,10 @@ export async function getActiveRideForPassenger(passengerId: string) {
         model,
         year,
         color,
-        plate_number
+        plate_number,
+        vehicle_type,
+        ride_category,
+        verification_status
       )
     `)
     .eq("passenger_id", passengerId)
@@ -164,7 +207,9 @@ export async function getActiveRideForPassenger(passengerId: string) {
     .limit(1)
     .maybeSingle();
 
-  if (rideError) throw new Error(rideError.message);
+  if (rideError) {
+    throw new Error(rideError.message);
+  }
 
   if (!ride) {
     return {
@@ -173,21 +218,46 @@ export async function getActiveRideForPassenger(passengerId: string) {
     };
   }
 
+  /*
+   * The PIN is passenger-visible only after the driver marks Arrived.
+   * Before arrival and after trip start there is no reason to expose it.
+   */
+  const passengerRide = {
+    ...ride,
+    start_otp:
+      ride.ride_status === "driver_arrived"
+        ? ride.start_otp
+        : null,
+  };
+
   let driverLocation = null;
 
   if (ride.driver_id) {
     const { data, error } = await supabaseAdmin
       .from("driver_locations")
-      .select("*")
+      .select(`
+        driver_id,
+        ride_id,
+        latitude,
+        longitude,
+        heading,
+        speed_kph,
+        accuracy_meters,
+        recorded_at,
+        updated_at
+      `)
       .eq("driver_id", ride.driver_id)
       .maybeSingle();
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
+
     driverLocation = data;
   }
 
   return {
-    ride,
+    ride: passengerRide,
     driverLocation,
   };
 }
@@ -254,7 +324,7 @@ export async function transitionDriverRide(
     updates.completed_at = now;
     updates.actual_dropoff_latitude = input?.latitude ?? null;
     updates.actual_dropoff_longitude = input?.longitude ?? null;
-    updates.final_fare = ride.estimated_fare;
+    updates.final_fare = ride.agreed_fare ?? ride.estimated_fare;
     updates.payment_status =
       ride.payment_method === "cash" ? "paid" : ride.payment_status;
   }
@@ -294,7 +364,7 @@ export async function transitionDriverRide(
         targetStatus === "driver_arriving"
           ? "Track your driver live in Safari."
           : targetStatus === "driver_arrived"
-            ? "Meet your driver at the pickup point."
+            ? "Meet your driver at the pickup point. Your four-digit start PIN is now available in Safari."
             : targetStatus === "in_progress"
               ? "You are now on the way to your destination."
               : "Thanks for riding with Safari.",

@@ -8,6 +8,7 @@ import {
   acceptPassengerDriverOffer,
   listDriverRideRequests,
   listPassengerDriverOffers,
+  listNearbyDriversForRide,
   rejectRideRequest,
   startRideMatching,
   submitDriverFareOffer,
@@ -24,6 +25,35 @@ matchingRouter.post(
       const rideId = z.string().uuid().parse(req.params.rideId);
       const data = await startRideMatching(req.authUser!.id, rideId);
       res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+
+matchingRouter.get(
+  "/rides/:rideId/nearby-drivers",
+  requireAuth,
+  requireAccountTypes("passenger"),
+  async (req, res, next) => {
+    try {
+      const rideId =
+        z.string().uuid().parse(req.params.rideId);
+
+      const drivers =
+        await listNearbyDriversForRide(
+          req.authUser!.id,
+          rideId,
+        );
+
+      res.json({
+        success: true,
+        data: {
+          drivers,
+          total: drivers.length,
+        },
+      });
     } catch (error) {
       next(error);
     }
@@ -54,10 +84,11 @@ matchingRouter.post(
   requireAccountTypes("passenger"),
   async (req, res, next) => {
     try {
-      z.string().uuid().parse(req.params.rideId);
+      const rideId = z.string().uuid().parse(req.params.rideId);
       const offerId = z.string().uuid().parse(req.params.offerId);
       const ride = await acceptPassengerDriverOffer(
         req.authUser!.id,
+        rideId,
         offerId,
       );
       res.json({ success: true, data: { ride } });

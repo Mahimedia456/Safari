@@ -141,40 +141,72 @@ adminRidesRouter.patch("/pricing/:pricingId", async (req, res, next) => {
 
 adminRidesRouter.get("/driver-offers", async (_req, res, next) => {
   try {
-    const { data, error } = await supabaseAdmin
+    // Avoid PostgREST embedded rides relation here. ride_driver_offers has
+    // more than one relationship path to rides in the current Safari schema.
+    const { data: offers, error: offersError } = await supabaseAdmin
       .from("ride_driver_offers")
-      .select(`
-        *,
-        rides (
-          id,
-          ride_number,
-          pickup_address,
-          dropoff_address,
-          suggested_fare,
-          agreed_fare,
-          ride_status,
-          ride_categories (
-            code,
-            name
-          )
-        ),
-        profiles!ride_driver_offers_driver_id_fkey (
-          id,
-          full_name,
-          phone
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false })
       .limit(300);
 
-    if (error) throw new Error(error.message);
+    if (offersError) throw new Error(offersError.message);
+
+    const rows = offers ?? [];
+    const rideIds = [...new Set(rows.map((row) => row.ride_id).filter(Boolean))];
+    const driverIds = [...new Set(rows.map((row) => row.driver_id).filter(Boolean))];
+
+    const [ridesResult, profilesResult] = await Promise.all([
+      rideIds.length
+        ? supabaseAdmin
+            .from("rides")
+            .select("id,ride_number,pickup_address,dropoff_address,suggested_fare,agreed_fare,ride_status,ride_category_id")
+            .in("id", rideIds)
+        : Promise.resolve({ data: [], error: null }),
+      driverIds.length
+        ? supabaseAdmin
+            .from("profiles")
+            .select("id,full_name,phone")
+            .in("id", driverIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (ridesResult.error) throw new Error(ridesResult.error.message);
+    if (profilesResult.error) throw new Error(profilesResult.error.message);
+
+    const rides = ridesResult.data ?? [];
+    const categoryIds = [...new Set(rides.map((ride) => ride.ride_category_id).filter(Boolean))];
+    const categoriesResult = categoryIds.length
+      ? await supabaseAdmin
+          .from("ride_categories")
+          .select("id,code,name")
+          .in("id", categoryIds)
+      : { data: [], error: null };
+
+    if (categoriesResult.error) throw new Error(categoriesResult.error.message);
+
+    const rideMap = new Map(rides.map((ride) => [ride.id, ride]));
+    const profileMap = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile]));
+    const categoryMap = new Map((categoriesResult.data ?? []).map((category) => [category.id, category]));
+
+    const hydrated = rows.map((offer) => {
+      const ride = rideMap.get(offer.ride_id) ?? null;
+      return {
+        ...offer,
+        rides: ride
+          ? {
+              ...ride,
+              ride_categories: ride.ride_category_id
+                ? categoryMap.get(ride.ride_category_id) ?? null
+                : null,
+            }
+          : null,
+        profiles: profileMap.get(offer.driver_id) ?? null,
+      };
+    });
 
     res.json({
       success: true,
-      data: {
-        offers: data ?? [],
-        total: data?.length ?? 0,
-      },
+      data: { offers: hydrated, total: hydrated.length },
     });
   } catch (error) {
     next(error);
@@ -229,7 +261,7 @@ adminRidesRouter.get("/", async (req, res, next) => {
       .order("created_at", { ascending: false });
 
     if (query.status) builder = builder.eq("ride_status", query.status);
-    if (query.cityId) builder = builder.eq("city_id", query.cityId);
+    if (query.cityId) builder = builder.eq("service_city_id", query.cityId);
 
     const { data, error } = await builder;
 

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authRouter } from "../modules/auth/auth.routes.js";
 import { profileRouter } from "../modules/profiles/profile.routes.js";
+import { chatRouter } from "../modules/chat/chat.routes.js";
 import { healthRouter } from "./health.routes.js";
 import { passengerRouter } from "../modules/passengers/passenger.routes.js";
 import { adminPassengersRouter } from "../modules/admin/passengers.routes.js";
@@ -45,6 +46,7 @@ apiRouter.use("/rides", rideRouter);
 apiRouter.use("/admin/rides", adminRidesRouter);
 
 apiRouter.use("/matching", matchingRouter);
+apiRouter.use("/chat", chatRouter);
 apiRouter.use("/tracking", trackingRouter);
 apiRouter.use("/admin/live-rides", adminLiveRidesRouter);
 
