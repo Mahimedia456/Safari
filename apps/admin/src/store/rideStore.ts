@@ -16,13 +16,6 @@ import {
   useAuthStore,
 } from "./authStore";
 
-import {
-  usePassengerStore,
-} from "./passengerStore";
-
-import {
-  useDriverStore,
-} from "./driverStore";
 
 type RideState = {
   loading: boolean;
@@ -95,29 +88,9 @@ function numberValue(
 function mapRide(
   item: AdminRide,
 ): Ride {
-  const passengers =
-    usePassengerStore.getState()
-      .passengers ?? [];
-
-  const drivers =
-    useDriverStore.getState()
-      .drivers ?? [];
-
-  const passenger =
-    passengers.find(
-      (value) =>
-        value.id ===
-        item.passenger_id,
-    );
-
-  const driver =
-    item.driver_id
-      ? drivers.find(
-          (value) =>
-            value.id ===
-            item.driver_id,
-        )
-      : null;
+  const passenger = item.passenger_profile ?? null;
+  const driver = item.driver_profile ?? null;
+  const vehicle = item.driver_vehicles ?? null;
 
   return {
     id: item.id,
@@ -126,7 +99,7 @@ function mapRide(
       item.passenger_id,
 
     passengerName:
-      passenger?.fullName ??
+      passenger?.full_name ??
       "Safari Passenger",
 
     passengerPhone:
@@ -137,19 +110,24 @@ function mapRide(
       item.driver_id,
 
     driverName:
-      driver?.fullName ??
+      driver?.full_name ??
       null,
 
     driverPhone:
       driver?.phone ??
       null,
 
-    vehicleName:
-      item.vehicle_id
-        ? "Assigned vehicle"
-        : null,
+    vehicleId:
+      item.vehicle_id,
 
-    vehiclePlate: null,
+    vehicleName:
+      vehicle
+        ? [vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Assigned vehicle"
+        : item.vehicle_id
+          ? "Assigned vehicle"
+          : null,
+
+    vehiclePlate: vehicle?.plate_number ?? null,
 
     region:
       "Pakistan",
@@ -257,29 +235,11 @@ export const useRideStore =
         });
 
         try {
-          const [
-            data,
-          ] =
-            await Promise.all([
-              adminRideService.list(
-                token(),
-                filters,
-              ),
-              usePassengerStore
-                .getState()
-                .loaded
-                ? Promise.resolve()
-                : usePassengerStore
-                    .getState()
-                    .load(),
-              useDriverStore
-                .getState()
-                .loaded
-                ? Promise.resolve()
-                : useDriverStore
-                    .getState()
-                    .load(),
-            ]);
+          const data =
+            await adminRideService.list(
+              token(),
+              filters,
+            );
 
           const rides =
             Array.isArray(

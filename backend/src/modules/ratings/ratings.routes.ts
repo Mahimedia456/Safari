@@ -5,6 +5,8 @@ import { requireAuth } from "../../middleware/auth.js";
 import {
   getRideRatings,
   getRideReceipt,
+  getRideRatingStatus,
+  getExperienceRatingStatus,
   submitRideRating,
   submitExperienceRating,
 } from "./ratings.service.js";
@@ -21,6 +23,23 @@ ratingsRouter.get("/rides/:rideId/receipt", async (req, res, next) => {
     res.json({
       success: true,
       data: { receipt },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+ratingsRouter.get("/rides/:rideId/rating-status", async (req, res, next) => {
+  try {
+    const rideId = z.string().uuid().parse(req.params.rideId);
+    const status = await getRideRatingStatus(
+      req.authUser!.id,
+      rideId,
+    );
+
+    res.json({
+      success: true,
+      data: status,
     });
   } catch (error) {
     next(error);
@@ -68,6 +87,32 @@ ratingsRouter.post("/rides/:rideId/ratings", async (req, res, next) => {
   }
 });
 
+
+ratingsRouter.get(
+  "/experiences/:type/:sourceId/status",
+  async (req, res, next) => {
+    try {
+      const type = z
+        .enum(["food", "grocery", "pharmacy", "service"])
+        .parse(req.params.type);
+
+      const sourceId = z.string().uuid().parse(req.params.sourceId);
+
+      const status = await getExperienceRatingStatus(
+        req.authUser!.id,
+        type,
+        sourceId,
+      );
+
+      res.json({
+        success: true,
+        data: status,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 ratingsRouter.post(
   "/experiences/:type/:sourceId",

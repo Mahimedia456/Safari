@@ -10,6 +10,37 @@ import { supabaseAdmin } from "../../lib/supabase.js";
 
 export const adminLiveRidesRouter = Router();
 
+async function hydrateRideCities<T extends Record<string, any>>(rides: T[]) {
+  const cityIds = [
+    ...new Set(
+      rides
+        .map((ride) => ride.city_id ?? ride.service_city_id ?? null)
+        .filter(Boolean),
+    ),
+  ];
+
+  if (cityIds.length === 0) {
+    return rides.map((ride) => ({ ...ride, service_cities: null }));
+  }
+
+  const { data: cities, error } = await supabaseAdmin
+    .from("service_cities")
+    .select("id,name,city_code,country_code,currency_code")
+    .in("id", cityIds);
+
+  if (error) throw new Error(error.message);
+
+  const cityMap = new Map((cities ?? []).map((city) => [city.id, city]));
+
+  return rides.map((ride) => {
+    const cityId = ride.city_id ?? ride.service_city_id ?? null;
+    return {
+      ...ride,
+      service_cities: cityId ? cityMap.get(cityId) ?? null : null,
+    };
+  });
+}
+
 adminLiveRidesRouter.use(
   requireAuth,
   requireAccountTypes("administration"),
@@ -30,10 +61,6 @@ adminLiveRidesRouter.get("/", async (_req, res, next) => {
         ride_categories (
           code,
           name
-        ),
-        service_cities (
-          name,
-          city_code
         ),
         profiles!rides_passenger_id_fkey (
           id,
@@ -64,7 +91,9 @@ adminLiveRidesRouter.get("/", async (_req, res, next) => {
 
     if (rideError) throw new Error(rideError.message);
 
-    const driverIds = rides
+    const hydratedRides = await hydrateRideCities(rides ?? []);
+
+    const driverIds = hydratedRides
       .map((ride) => ride.driver_id)
       .filter(Boolean);
 
@@ -87,13 +116,13 @@ adminLiveRidesRouter.get("/", async (_req, res, next) => {
     res.json({
       success: true,
       data: {
-        rides: rides.map((ride) => ({
+        rides: hydratedRides.map((ride) => ({
           ...ride,
           driver_location: ride.driver_id
             ? locationMap.get(ride.driver_id) ?? null
             : null,
         })),
-        total: rides.length,
+        total: hydratedRides.length,
       },
     });
   } catch (error) {

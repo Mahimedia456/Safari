@@ -29,6 +29,45 @@ function roundMoney(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+async function hydrateRideCities<T extends Record<string, any>>(
+  rides: T[],
+): Promise<Array<T & { service_cities: any | null }>> {
+  const cityIds = [
+    ...new Set(
+      rides
+        .map((ride) => ride.city_id ?? ride.service_city_id ?? null)
+        .filter(Boolean),
+    ),
+  ];
+
+  if (cityIds.length === 0) {
+    return rides.map((ride) => ({
+      ...ride,
+      service_cities: null,
+    }));
+  }
+
+  const { data: cities, error } = await supabaseAdmin
+    .from("service_cities")
+    .select("id,name,city_code,country_code,currency_code")
+    .in("id", cityIds);
+
+  if (error) throw new Error(error.message);
+
+  const cityMap = new Map(
+    (cities ?? []).map((city) => [city.id, city]),
+  );
+
+  return rides.map((ride) => {
+    const cityId = ride.city_id ?? ride.service_city_id ?? null;
+
+    return {
+      ...ride,
+      service_cities: cityId ? cityMap.get(cityId) ?? null : null,
+    };
+  });
+}
+
 async function findCityForPickup(
   countryCode: "PK",
   latitude: number,
@@ -640,11 +679,6 @@ export async function createRideFromQuote(
         passenger_capacity,
         vehicle_type,
         service_tier
-      ),
-      service_cities (
-        name,
-        city_code,
-        currency_code
       )
     `)
     .single();
@@ -672,7 +706,9 @@ export async function createRideFromQuote(
       }),
   ]);
 
-  return ride;
+  const [hydratedRide] = await hydrateRideCities([ride]);
+
+  return hydratedRide;
 }
 
 export async function listPassengerRides(
@@ -689,10 +725,6 @@ export async function listPassengerRides(
         passenger_capacity,
         vehicle_type,
         service_tier
-      ),
-      service_cities (
-        name,
-        city_code
       )
     `)
     .eq("passenger_id", passengerId)
@@ -705,7 +737,7 @@ export async function listPassengerRides(
   const { data, error } = await builder;
 
   if (error) throw new Error(error.message);
-  return data;
+  return hydrateRideCities(data ?? []);
 }
 
 export async function getPassengerRide(
@@ -722,11 +754,6 @@ export async function getPassengerRide(
           name,
           passenger_capacity,
           vehicle_type
-        ),
-        service_cities (
-          name,
-          city_code,
-          currency_code
         )
       `)
       .eq("id", rideId)
@@ -743,8 +770,10 @@ export async function getPassengerRide(
   if (rideResult.error) throw new Error(rideResult.error.message);
   if (eventsResult.error) throw new Error(eventsResult.error.message);
 
+  const [ride] = await hydrateRideCities([rideResult.data]);
+
   return {
-    ride: rideResult.data,
+    ride,
     events: eventsResult.data,
   };
 }
@@ -756,7 +785,7 @@ export async function cancelPassengerRide(
 ) {
   const { data: ride, error: fetchError } = await supabaseAdmin
     .from("rides")
-    .select("id,ride_status")
+    .select("id,ride_status,driver_id")
     .eq("id", rideId)
     .eq("passenger_id", passengerId)
     .single();
@@ -802,6 +831,73 @@ export async function cancelPassengerRide(
     actor_user_id: passengerId,
     note: reason,
   });
+
+  /*
+   * If a driver had already been assigned, release them immediately so a
+   * passenger cancellation does not leave the driver unavailable after the
+   * ride disappears from the active endpoint.
+   */
+  if (ride.driver_id) {
+    const [
+      profileResult,
+      locationResult,
+      notificationResult,
+    ] =
+      await Promise.all([
+        supabaseAdmin
+          .from("driver_profiles")
+          .update({
+            is_available: true,
+            updated_at: now,
+          })
+          .eq(
+            "user_id",
+            ride.driver_id,
+          ),
+
+        supabaseAdmin
+          .from("driver_locations")
+          .update({
+            ride_id: null,
+            updated_at: now,
+          })
+          .eq(
+            "driver_id",
+            ride.driver_id,
+          ),
+
+        supabaseAdmin
+          .from("notifications")
+          .insert({
+            user_id: ride.driver_id,
+            notification_type:
+              "ride_cancelled_by_passenger",
+            title:
+              "Passenger cancelled the ride",
+            body:
+              "This Safari ride has been cancelled and you are available for new requests.",
+            data: {
+              rideId,
+              status:
+                "cancelled_by_passenger",
+            },
+            is_read: false,
+          }),
+      ]);
+
+    for (const result of [
+      profileResult,
+      locationResult,
+      notificationResult,
+    ]) {
+      if (result.error) {
+        console.error(
+          "[Safari Ride] passenger cancellation cleanup failed",
+          result.error.message,
+        );
+      }
+    }
+  }
 
   return data;
 }

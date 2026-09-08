@@ -57,19 +57,7 @@ export async function getRideChat(
   const { data: messages, error } =
     await supabaseAdmin
       .from("ride_messages")
-      .select(`
-        id,
-        ride_id,
-        sender_id,
-        message,
-        created_at,
-        read_at,
-        profiles!ride_messages_sender_id_fkey (
-          id,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select("id,ride_id,sender_id,message,created_at,read_at")
       .eq("ride_id", rideId)
       .order("created_at", {
         ascending: true,
@@ -137,19 +125,7 @@ export async function sendRideChatMessage(
         sender_id: userId,
         message: message.trim(),
       })
-      .select(`
-        id,
-        ride_id,
-        sender_id,
-        message,
-        created_at,
-        read_at,
-        profiles!ride_messages_sender_id_fkey (
-          id,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select("id,ride_id,sender_id,message,created_at,read_at")
       .single();
 
   if (error) {

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../lib/supabase.js";
+import { ensureDeliveryJob } from "../delivery/delivery-job.service.js";
 
 export async function listRestaurants(input: {
   cityId?: string;
@@ -86,6 +87,21 @@ export async function getRestaurant(restaurantId: string) {
     sections: sectionsResult.data,
     items: itemsResult.data,
   };
+}
+
+export async function getFoodMenuItem(menuItemId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("food_menu_items")
+    .select("*")
+    .eq("id", menuItemId)
+    .eq("is_available", true)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Safari Food item is unavailable.");
+  }
+
+  return data;
 }
 
 export async function createFoodOrder(
@@ -216,6 +232,30 @@ export async function createFoodOrder(
     actor_type: "customer",
     actor_user_id: passengerId,
     note: "Safari Food order placed.",
+  });
+
+  await ensureDeliveryJob({
+    type: "food",
+    sourceId: order.id,
+    customerId: passengerId,
+    pickupName: restaurant.name,
+    pickupAddress: restaurant.address,
+    pickupLatitude:
+      restaurant.latitude == null
+        ? null
+        : Number(restaurant.latitude),
+    pickupLongitude:
+      restaurant.longitude == null
+        ? null
+        : Number(restaurant.longitude),
+    dropoffAddress: input.deliveryAddress,
+    dropoffLatitude:
+      input.deliveryLatitude ?? null,
+    dropoffLongitude:
+      input.deliveryLongitude ?? null,
+    deliveryFee,
+    estimatedTotal: total,
+    currencyCode: "PKR",
   });
 
   return getFoodOrder(passengerId, order.id);

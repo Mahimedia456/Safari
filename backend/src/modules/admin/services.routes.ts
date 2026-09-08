@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAuth } from "../../middleware/auth.js";
 import { requireAccountTypes } from "../../middleware/requireRole.js";
 import { supabaseAdmin } from "../../lib/supabase.js";
+import { hydrateServiceBookings } from "../services/service-booking.hydration.js";
 
 export const adminServicesRouter = Router();
 
@@ -100,35 +101,49 @@ adminServicesRouter.get("/bookings", async (req, res, next) => {
       return;
     }
 
-    let builder = supabaseAdmin
-      .from("service_bookings")
-      .select(`
-        *,
-        service_providers (
-          id,
-          business_name
-        ),
-        provider_services (
-          id,
-          name,
-          pricing_type,
-          price
+    let builder =
+      supabaseAdmin
+        .from(
+          "service_bookings",
         )
-      `)
-      .in("provider_id", ids)
-      .order("created_at", { ascending: false });
+        .select("*")
+        .in(
+          "provider_id",
+          ids,
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          },
+        );
 
     if (query.status)
       builder = builder.eq("booking_status", query.status);
 
-    const { data, error } = await builder;
-    if (error) throw new Error(error.message);
+    const {
+      data,
+      error,
+    } =
+      await builder;
+
+    if (error) {
+      throw new Error(
+        error.message,
+      );
+    }
+
+    const bookings =
+      await hydrateServiceBookings(
+        data ?? [],
+      );
 
     res.json({
       success: true,
       data: {
-        bookings: data,
-        total: data.length,
+        bookings,
+        total:
+          bookings.length,
       },
     });
   } catch (error) {

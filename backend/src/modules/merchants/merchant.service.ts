@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../lib/supabase.js";
+import { hydrateServiceBookings } from "../services/service-booking.hydration.js";
 
 type MerchantRelation =
   | {
@@ -72,12 +73,15 @@ export async function syncUnifiedOrderIndex() {
       `),
 
     supabaseAdmin
-      .from("service_bookings")
+      .from(
+        "service_bookings",
+      )
       .select(`
         id,
         booking_number,
         customer_id,
         provider_id,
+        service_id,
         booking_status,
         currency_code,
         estimated_total,
@@ -88,10 +92,7 @@ export async function syncUnifiedOrderIndex() {
         completed_at,
         cancelled_at,
         created_at,
-        updated_at,
-        service_providers (
-          merchant_user_id
-        )
+        updated_at
       `),
   ]);
 
@@ -106,6 +107,12 @@ export async function syncUnifiedOrderIndex() {
   if (servicesResult.error) {
     throw new Error(servicesResult.error.message);
   }
+
+  const hydratedServices =
+    await hydrateServiceBookings(
+      servicesResult.data ??
+        [],
+    );
 
   const rows: Record<string, unknown>[] = [];
 
@@ -163,7 +170,7 @@ export async function syncUnifiedOrderIndex() {
     });
   }
 
-  for (const booking of servicesResult.data ?? []) {
+  for (const booking of hydratedServices) {
     rows.push({
       source_type: "services",
       source_id: booking.id,

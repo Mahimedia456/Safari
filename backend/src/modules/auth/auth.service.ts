@@ -455,6 +455,13 @@ export async function registerMobile(
         .updateUserById(
           userId,
           {
+            // Migrate any legacy Supabase phone/email-auth user to Safari's
+            // deterministic internal email identity so phone+password login
+            // keeps working for accounts created before the WhatsApp flow.
+            email:
+              internalEmail,
+            email_confirm:
+              true,
             password:
               input.password,
             user_metadata: {

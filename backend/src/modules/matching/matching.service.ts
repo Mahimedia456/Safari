@@ -1,4 +1,5 @@
-﻿import { supabaseAdmin } from "../../lib/supabase.js";
+import { randomInt } from "node:crypto";
+import { supabaseAdmin } from "../../lib/supabase.js";
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -43,37 +44,98 @@ async function offerSettings(cityId: string) {
   };
 }
 
+async function rideCategoryCode(
+  rideCategoryId:
+    | string
+    | null
+    | undefined,
+) {
+  if (
+    !rideCategoryId
+  ) {
+    return null;
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await supabaseAdmin
+      .from(
+        "ride_categories",
+      )
+      .select(
+        "id,code,name,vehicle_type,service_tier",
+      )
+      .eq(
+        "id",
+        rideCategoryId,
+      )
+      .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      error.message,
+    );
+  }
+
+  return data?.code ??
+    null;
+}
+
 export async function startRideMatching(
   passengerId: string,
   rideId: string,
 ) {
-  const { data: ride, error: rideError } = await supabaseAdmin
-    .from("rides")
-    .select(`
-      *,
-      ride_categories (
-        code,
-        name,
-        vehicle_type,
-        service_tier
+  const {
+    data: ride,
+    error: rideError,
+  } =
+    await supabaseAdmin
+      .from("rides")
+      .select("*")
+      .eq(
+        "id",
+        rideId,
       )
-    `)
-    .eq("id", rideId)
-    .eq("passenger_id", passengerId)
-    .single();
+      .eq(
+        "passenger_id",
+        passengerId,
+      )
+      .single();
 
-  if (rideError || !ride) throw new Error("Safari ride not found.");
-
-  if (!["requested", "searching"].includes(ride.ride_status)) {
-    throw new Error("This Safari ride is not accepting driver offers.");
+  if (
+    rideError ||
+    !ride
+  ) {
+    throw new Error(
+      "Safari ride not found.",
+    );
   }
 
-  const rideCategory = Array.isArray(ride.ride_categories)
-    ? ride.ride_categories[0] ?? null
-    : ride.ride_categories ?? null;
+  if (
+    ![
+      "requested",
+      "searching",
+    ].includes(
+      ride.ride_status,
+    )
+  ) {
+    throw new Error(
+      "This Safari ride is not accepting driver offers.",
+    );
+  }
 
-  const categoryCode = rideCategory?.code;
-  if (!categoryCode) throw new Error("Safari ride category is unavailable.");
+  const categoryCode =
+    await rideCategoryCode(
+      ride.ride_category_id,
+    );
+
+  if (!categoryCode) {
+    throw new Error(
+      "Safari ride category is unavailable.",
+    );
+  }
 
   const settings = await offerSettings(ride.city_id);
 
@@ -508,6 +570,60 @@ export async function acceptPassengerDriverOffer(
 
   if (rideError || !ride) throw new Error("Safari ride could not be loaded.");
 
+  /*
+   * Generate the passenger-visible 4-digit start PIN as soon as a driver is
+   * assigned. The driver active payload never exposes this value; the driver
+   * must ask the passenger for it before the trip can start.
+   */
+  let acceptedRide =
+    ride;
+
+  if (
+    !ride.start_otp
+  ) {
+    const {
+      data: rideWithPin,
+      error: pinError,
+    } =
+      await supabaseAdmin
+        .from("rides")
+        .update({
+          start_otp:
+            String(
+              randomInt(
+                1000,
+                10000,
+              ),
+            ),
+          updated_at:
+            new Date()
+              .toISOString(),
+        })
+        .eq(
+          "id",
+          ride.id,
+        )
+        .eq(
+          "passenger_id",
+          passengerId,
+        )
+        .select("*")
+        .single();
+
+    if (
+      pinError ||
+      !rideWithPin
+    ) {
+      throw new Error(
+        pinError?.message ??
+        "Safari could not create the ride start PIN.",
+      );
+    }
+
+    acceptedRide =
+      rideWithPin;
+  }
+
   // Notifications are deliberately outside the transaction: notification
   // failure must never roll back or make a successfully accepted ride look
   // failed to the passenger.
@@ -525,7 +641,7 @@ export async function acceptPassengerDriverOffer(
     }
   }
 
-  return ride;
+  return acceptedRide;
 }
 
 export async function rejectRideRequest(
@@ -556,33 +672,43 @@ export async function listNearbyDriversForRide(
   passengerId: string,
   rideId: string,
 ) {
-  const { data: ride, error: rideError } = await supabaseAdmin
-    .from("rides")
-    .select(`
-      id,
-      passenger_id,
-      pickup_latitude,
-      pickup_longitude,
-      ride_status,
-      ride_categories (
-        code,
-        name,
-        vehicle_type,
-        service_tier
+  const {
+    data: ride,
+    error: rideError,
+  } =
+    await supabaseAdmin
+      .from("rides")
+      .select(
+        "id,passenger_id,pickup_latitude,pickup_longitude,ride_status,ride_category_id",
       )
-    `)
-    .eq("id", rideId)
-    .eq("passenger_id", passengerId)
-    .single();
+      .eq(
+        "id",
+        rideId,
+      )
+      .eq(
+        "passenger_id",
+        passengerId,
+      )
+      .single();
 
-  if (rideError || !ride) {
-    throw new Error("Safari ride was not found.");
+  if (
+    rideError ||
+    !ride
+  ) {
+    throw new Error(
+      "Safari ride was not found.",
+    );
   }
 
-  const categoryCode = ride.ride_categories?.[0]?.code ?? null;
+  const categoryCode =
+    await rideCategoryCode(
+      ride.ride_category_id,
+    );
 
   if (!categoryCode) {
-    throw new Error("Safari ride category is unavailable.");
+    throw new Error(
+      "Safari ride category is unavailable.",
+    );
   }
 
   const { data: drivers, error: driversError } = await supabaseAdmin

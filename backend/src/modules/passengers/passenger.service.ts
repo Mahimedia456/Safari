@@ -1,4 +1,8 @@
 import { supabaseAdmin } from "../../lib/supabase.js";
+import {
+  hydrateServiceBooking,
+  hydrateServiceBookings,
+} from "../services/service-booking.hydration.js";
 
 export async function getPassengerOverview(userId: string) {
   const [profileResult, addressesResult, preferencesResult, emergencyResult] =
@@ -303,18 +307,20 @@ export async function getPassengerActivity(
       .limit(100),
 
     supabaseAdmin
-      .from("service_bookings")
-      .select(`
-        *,
-        service_providers (
-          business_name
-        ),
-        provider_services (
-          name
-        )
-      `)
-      .eq("customer_id", userId)
-      .order("created_at", { ascending: false })
+      .from(
+        "service_bookings",
+      )
+      .select("*")
+      .eq(
+        "customer_id",
+        userId,
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        },
+      )
       .limit(100),
   ]);
 
@@ -328,6 +334,12 @@ export async function getPassengerActivity(
       throw new Error(result.error.message);
     }
   }
+
+  const hydratedServices =
+    await hydrateServiceBookings(
+      servicesResult.data ??
+        [],
+    );
 
   const activity = [
     ...(ridesResult.data ?? []).map((row: any) => ({
@@ -383,7 +395,7 @@ export async function getPassengerActivity(
       completedAt: row.delivered_at ?? null,
     })),
 
-    ...(servicesResult.data ?? []).map((row: any) => ({
+    ...hydratedServices.map((row: any) => ({
       id: row.id,
       type: "service" as const,
       reference: row.booking_number ?? row.id,
@@ -523,41 +535,79 @@ export async function getPassengerActivityDetail(
     };
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("service_bookings")
-    .select(`
-      *,
-      service_providers (
-        business_name
-      ),
-      provider_services (
-        name
+  const {
+    data,
+    error,
+  } =
+    await supabaseAdmin
+      .from(
+        "service_bookings",
       )
-    `)
-    .eq("id", id)
-    .eq("customer_id", userId)
-    .single();
+      .select("*")
+      .eq(
+        "id",
+        id,
+      )
+      .eq(
+        "customer_id",
+        userId,
+      )
+      .single();
 
-  if (error || !data) {
-    throw new Error("Safari service activity was not found.");
+  if (
+    error ||
+    !data
+  ) {
+    throw new Error(
+      "Safari service activity was not found.",
+    );
   }
 
+  const hydrated =
+    await hydrateServiceBooking(
+      data,
+    );
+
   return {
-    id: data.id,
-    type: "service" as const,
-    reference: data.booking_number ?? data.id,
+    id:
+      hydrated.id,
+    type:
+      "service" as const,
+    reference:
+      hydrated.booking_number ??
+      hydrated.id,
     title:
-      data.provider_services?.name ??
+      hydrated
+        .provider_services
+        ?.name ??
       "Safari Service",
-    status: data.booking_status ?? "requested",
-    amount: toNumber(data.total_amount),
-    currencyCode: data.currency_code ?? "PKR",
-    createdAt: data.created_at,
-    completedAt: data.completed_at ?? null,
+    status:
+      hydrated.booking_status ??
+      "requested",
+    amount:
+      toNumber(
+        hydrated.total_amount,
+      ),
+    currencyCode:
+      hydrated.currency_code ??
+      "PKR",
+    createdAt:
+      hydrated.created_at,
+    completedAt:
+      hydrated.completed_at ??
+      null,
     providerName:
-      data.service_providers?.business_name ?? null,
-    serviceAddress: data.service_address ?? null,
-    paymentMethod: data.payment_method ?? null,
-    raw: data,
+      hydrated
+        .service_providers
+        ?.business_name ??
+      null,
+    serviceAddress:
+      hydrated.service_address ??
+      null,
+    paymentMethod:
+      hydrated.payment_method ??
+      null,
+    raw:
+      hydrated,
   };
 }

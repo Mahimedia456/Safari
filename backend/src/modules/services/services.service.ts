@@ -1,4 +1,8 @@
 import { supabaseAdmin } from "../../lib/supabase.js";
+import {
+  hydrateServiceBooking,
+  hydrateServiceBookings,
+} from "./service-booking.hydration.js";
 
 export async function listServiceCategories() {
   const { data, error } = await supabaseAdmin
@@ -135,29 +139,69 @@ export async function createServiceBooking(
     paymentMethod: "cash" | "wallet" | "card";
   },
 ) {
-  const { data: service, error: serviceError } = await supabaseAdmin
-    .from("provider_services")
-    .select(`
-      *,
-      service_providers (
-        id,
-        verification_status,
-        is_active
-      )
-    `)
-    .eq("id", input.serviceId)
-    .eq("provider_id", input.providerId)
-    .eq("is_available", true)
-    .single();
+  const [
+    serviceResult,
+    providerResult,
+  ] =
+    await Promise.all([
+      supabaseAdmin
+        .from(
+          "provider_services",
+        )
+        .select("*")
+        .eq(
+          "id",
+          input.serviceId,
+        )
+        .eq(
+          "provider_id",
+          input.providerId,
+        )
+        .eq(
+          "is_available",
+          true,
+        )
+        .single(),
 
-  if (serviceError || !service)
-    throw new Error("Safari service is unavailable.");
+      supabaseAdmin
+        .from(
+          "service_providers",
+        )
+        .select(
+          "id,verification_status,is_active",
+        )
+        .eq(
+          "id",
+          input.providerId,
+        )
+        .single(),
+    ]);
+
+  const service =
+    serviceResult.data;
+
+  const provider =
+    providerResult.data;
 
   if (
-    service.service_providers?.verification_status !== "verified" ||
-    service.service_providers?.is_active !== true
+    serviceResult.error ||
+    !service
   ) {
-    throw new Error("Safari service provider is unavailable.");
+    throw new Error(
+      "Safari service is unavailable.",
+    );
+  }
+
+  if (
+    providerResult.error ||
+    !provider ||
+    provider.verification_status !==
+      "verified" ||
+    provider.is_active !== true
+  ) {
+    throw new Error(
+      "Safari service provider is unavailable.",
+    );
   }
 
   const { data: bookingNumber, error: numberError } =
@@ -217,73 +261,104 @@ export async function createServiceBooking(
 }
 
 export async function listServiceBookings(customerId: string) {
-  const { data, error } = await supabaseAdmin
-    .from("service_bookings")
-    .select(`
-      *,
-      service_providers (
-        id,
-        business_name,
-        logo_url
-      ),
-      provider_services (
-        id,
-        name,
-        pricing_type
+  const {
+    data,
+    error,
+  } =
+    await supabaseAdmin
+      .from(
+        "service_bookings",
       )
-    `)
-    .eq("customer_id", customerId)
-    .order("created_at", { ascending: false });
+      .select("*")
+      .eq(
+        "customer_id",
+        customerId,
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        },
+      );
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (error) {
+    throw new Error(
+      error.message,
+    );
+  }
+
+  return hydrateServiceBookings(
+    data ?? [],
+  );
 }
 
 export async function getServiceBooking(
   customerId: string,
   bookingId: string,
 ) {
-  const [bookingResult, eventsResult] = await Promise.all([
-    supabaseAdmin
-      .from("service_bookings")
-      .select(`
-        *,
-        service_providers (
-          id,
-          business_name,
-          logo_url,
-          phone,
-          address
-        ),
-        provider_services (
-          id,
-          name,
-          description,
-          pricing_type,
-          price,
-          duration_minutes
+  const [
+    bookingResult,
+    eventsResult,
+  ] =
+    await Promise.all([
+      supabaseAdmin
+        .from(
+          "service_bookings",
         )
-      `)
-      .eq("id", bookingId)
-      .eq("customer_id", customerId)
-      .single(),
+        .select("*")
+        .eq(
+          "id",
+          bookingId,
+        )
+        .eq(
+          "customer_id",
+          customerId,
+        )
+        .single(),
 
-    supabaseAdmin
-      .from("service_booking_events")
-      .select("*")
-      .eq("booking_id", bookingId)
-      .order("created_at"),
-  ]);
+      supabaseAdmin
+        .from(
+          "service_booking_events",
+        )
+        .select("*")
+        .eq(
+          "booking_id",
+          bookingId,
+        )
+        .order(
+          "created_at",
+        ),
+    ]);
 
-  if (bookingResult.error)
-    throw new Error(bookingResult.error.message);
+  if (
+    bookingResult.error ||
+    !bookingResult.data
+  ) {
+    throw new Error(
+      bookingResult.error
+        ?.message ??
+        "Safari service booking was not found.",
+    );
+  }
 
-  if (eventsResult.error)
-    throw new Error(eventsResult.error.message);
+  if (
+    eventsResult.error
+  ) {
+    throw new Error(
+      eventsResult.error.message,
+    );
+  }
+
+  const booking =
+    await hydrateServiceBooking(
+      bookingResult.data,
+    );
 
   return {
-    booking: bookingResult.data,
-    events: eventsResult.data,
+    booking,
+    events:
+      eventsResult.data ??
+      [],
   };
 }
 
@@ -342,57 +417,84 @@ export async function cancelServiceBooking(
 
 
 export async function listAvailableServiceJobs() {
-  const { data, error } = await supabaseAdmin
-    .from("service_bookings")
-    .select(`
-      *,
-      service_providers (
-        id,
-        business_name,
-        address
-      ),
-      provider_services (
-        id,
-        name,
-        duration_minutes
+  const {
+    data,
+    error,
+  } =
+    await supabaseAdmin
+      .from(
+        "service_bookings",
       )
-    `)
-    .in("booking_status", ["requested", "confirmed"])
-    .is("assigned_worker_id", null)
-    .order("created_at", { ascending: false })
-    .limit(100);
+      .select("*")
+      .in(
+        "booking_status",
+        [
+          "requested",
+          "confirmed",
+        ],
+      )
+      .is(
+        "assigned_worker_id",
+        null,
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        },
+      )
+      .limit(100);
 
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  if (error) {
+    throw new Error(
+      error.message,
+    );
+  }
+
+  return hydrateServiceBookings(
+    data ?? [],
+  );
 }
 
 export async function listWorkerServiceJobs(workerId: string) {
-  const { data, error } = await supabaseAdmin
-    .from("service_bookings")
-    .select(`
-      *,
-      service_providers (
-        id,
-        business_name,
-        address
-      ),
-      provider_services (
-        id,
-        name,
-        duration_minutes
+  const {
+    data,
+    error,
+  } =
+    await supabaseAdmin
+      .from(
+        "service_bookings",
       )
-    `)
-    .eq("assigned_worker_id", workerId)
-    .in("booking_status", [
-      "professional_assigned",
-      "on_the_way",
-      "arrived",
-      "in_progress"
-    ])
-    .order("assigned_at", { ascending: false });
+      .select("*")
+      .eq(
+        "assigned_worker_id",
+        workerId,
+      )
+      .in(
+        "booking_status",
+        [
+          "professional_assigned",
+          "on_the_way",
+          "arrived",
+          "in_progress",
+        ],
+      )
+      .order(
+        "assigned_at",
+        {
+          ascending: false,
+        },
+      );
 
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  if (error) {
+    throw new Error(
+      error.message,
+    );
+  }
+
+  return hydrateServiceBookings(
+    data ?? [],
+  );
 }
 
 export async function acceptServiceJob(

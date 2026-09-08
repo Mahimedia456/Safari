@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../lib/supabase.js";
+import { ensureDeliveryJob } from "../delivery/delivery-job.service.js";
 
 export async function listStores(input: {
   storeType: "grocery" | "pharmacy";
@@ -267,6 +268,30 @@ export async function createCommerceOrder(
       actor_user_id: passengerId,
       note: `Safari ${orderType} order placed.`,
     });
+
+  await ensureDeliveryJob({
+    type: orderType,
+    sourceId: order.id,
+    customerId: passengerId,
+    pickupName: store.name,
+    pickupAddress: store.address,
+    pickupLatitude:
+      store.latitude == null
+        ? null
+        : Number(store.latitude),
+    pickupLongitude:
+      store.longitude == null
+        ? null
+        : Number(store.longitude),
+    dropoffAddress: input.deliveryAddress,
+    dropoffLatitude:
+      input.deliveryLatitude ?? null,
+    dropoffLongitude:
+      input.deliveryLongitude ?? null,
+    deliveryFee,
+    estimatedTotal: total,
+    currencyCode: "PKR",
+  });
 
   return getCommerceOrder(passengerId, order.id);
 }

@@ -17,8 +17,17 @@ export type AdminRide = {
   payment_method: string;
   payment_status: string;
   created_at: string;
-  ride_categories?: { code: string; name: string };
-  service_cities?: { name: string; city_code: string };
+  ride_categories?: { code: string; name: string; vehicle_type?: string | null };
+  service_cities?: { name: string; city_code: string; country_code?: string };
+  passenger_profile?: { id: string; full_name?: string | null; phone?: string | null };
+  driver_profile?: { id: string; full_name?: string | null; phone?: string | null };
+  driver_vehicles?: {
+    id: string;
+    make?: string | null;
+    model?: string | null;
+    color?: string | null;
+    plate_number?: string | null;
+  } | null;
 };
 
 export type RideCatalogAdminData = {

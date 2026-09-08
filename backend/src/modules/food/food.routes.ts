@@ -7,6 +7,7 @@ import {
   cancelFoodOrder,
   createFoodOrder,
   getFoodOrder,
+  getFoodMenuItem,
   getRestaurant,
   listFoodOrders,
   listRestaurants,
@@ -52,6 +53,17 @@ foodRouter.get("/restaurants/:restaurantId", async (req, res, next) => {
     const data = await getRestaurant(restaurantId);
 
     res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+foodRouter.get("/menu-items/:menuItemId", async (req, res, next) => {
+  try {
+    const menuItemId = z.string().uuid().parse(req.params.menuItemId);
+    const item = await getFoodMenuItem(menuItemId);
+    res.json({ success: true, data: { item } });
   } catch (error) {
     next(error);
   }

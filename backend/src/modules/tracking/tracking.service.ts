@@ -95,7 +95,7 @@ export async function getActiveRideForDriver(driverId: string) {
       driver_id,
       vehicle_id,
       ride_category_id,
-      service_city_id,
+      city_id,
       ride_number,
       booking_type,
       ride_status,
@@ -202,6 +202,7 @@ export async function getActiveRideForPassenger(passengerId: string) {
       "driver_arriving",
       "driver_arrived",
       "in_progress",
+      "completed",
     ])
     .order("created_at", { ascending: false })
     .limit(1)
@@ -219,13 +220,65 @@ export async function getActiveRideForPassenger(passengerId: string) {
   }
 
   /*
-   * The PIN is passenger-visible only after the driver marks Arrived.
-   * Before arrival and after trip start there is no reason to expose it.
+   * Keep a freshly-completed ride visible briefly so the passenger client can
+   * hand off from live tracking to receipt/rating. Do not let an old completed
+   * trip look like an active ride after a later app launch.
+   */
+  if (ride.ride_status === "completed") {
+    const ratingResult =
+      await supabaseAdmin
+        .from("ride_ratings")
+        .select("id")
+        .eq("ride_id", ride.id)
+        .eq("reviewer_id", passengerId)
+        .maybeSingle();
+
+    if (ratingResult.error) {
+      throw new Error(
+        ratingResult.error.message,
+      );
+    }
+
+    /*
+     * Once the passenger has rated this trip it is no longer part of the
+     * active-session handoff. This is the server-side guard that prevents
+     * Home -> Complete -> Rating from looping after a successful submit.
+     */
+    if (ratingResult.data) {
+      return {
+        ride: null,
+        driverLocation: null,
+      };
+    }
+
+    const completedAt = ride.completed_at
+      ? new Date(ride.completed_at).getTime()
+      : 0;
+    const completionHandoffMs = 15 * 60 * 1000;
+
+    if (!completedAt || Date.now() - completedAt > completionHandoffMs) {
+      return {
+        ride: null,
+        driverLocation: null,
+      };
+    }
+  }
+
+  /*
+   * The 4-digit PIN is passenger-visible from driver assignment until trip
+   * start. The driver active endpoint never exposes it, so the passenger must
+   * provide the code in person before the in_progress transition.
    */
   const passengerRide = {
     ...ride,
     start_otp:
-      ride.ride_status === "driver_arrived"
+      [
+        "driver_assigned",
+        "driver_arriving",
+        "driver_arrived",
+      ].includes(
+        ride.ride_status,
+      )
         ? ride.start_otp
         : null,
   };

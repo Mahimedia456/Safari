@@ -307,10 +307,111 @@ export async function reverseRidePlace(
   };
 }
 
+function decodeGooglePolyline(encoded: string) {
+  const points: Array<{ latitude: number; longitude: number }> = [];
+  let index = 0;
+  let latitude = 0;
+  let longitude = 0;
+
+  while (index < encoded.length) {
+    let result = 0;
+    let shift = 0;
+    let byte = 0;
+
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+
+    const latitudeDelta =
+      result & 1 ? ~(result >> 1) : result >> 1;
+    latitude += latitudeDelta;
+
+    result = 0;
+    shift = 0;
+
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+
+    const longitudeDelta =
+      result & 1 ? ~(result >> 1) : result >> 1;
+    longitude += longitudeDelta;
+
+    points.push({
+      latitude: latitude / 1e5,
+      longitude: longitude / 1e5,
+    });
+  }
+
+  return points;
+}
+
+async function googleRoadRoute(
+  pickup: { latitude: number; longitude: number },
+  destination: { latitude: number; longitude: number },
+) {
+  if (!env.GOOGLE_MAPS_API_KEY) return null;
+
+  const params = new URLSearchParams({
+    origin: `${pickup.latitude},${pickup.longitude}`,
+    destination: `${destination.latitude},${destination.longitude}`,
+    mode: "driving",
+    region: "pk",
+    language: "en",
+    units: "metric",
+    key: env.GOOGLE_MAPS_API_KEY,
+  });
+
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`,
+  );
+
+  const data = (await response.json()) as any;
+
+  if (data.status === "ZERO_RESULTS") return null;
+
+  if (!response.ok || data.status !== "OK") {
+    throw new Error(
+      data.error_message ??
+        `Google Directions status ${data.status ?? response.status}.`,
+    );
+  }
+
+  const route = data.routes?.[0];
+  const leg = route?.legs?.[0];
+
+  if (!route || !leg) return null;
+
+  const encoded = clean(route.overview_polyline?.points);
+
+  return {
+    provider: "google" as const,
+    distanceKm: Number((Number(leg.distance?.value ?? 0) / 1000).toFixed(2)),
+    durationMinutes: Math.max(
+      1,
+      Math.round(Number(leg.duration?.value ?? 0) / 60),
+    ),
+    coordinates: encoded ? decodeGooglePolyline(encoded) : [],
+  };
+}
+
 export async function getRoadRoute(
   pickup: { latitude: number; longitude: number },
   destination: { latitude: number; longitude: number },
 ) {
+  if (env.GOOGLE_MAPS_API_KEY) {
+    try {
+      const googleRoute = await googleRoadRoute(pickup, destination);
+      if (googleRoute) return googleRoute;
+    } catch (error) {
+      console.error("[Safari Directions] Google fallback:", error);
+    }
+  }
+
   const url =
     "https://router.project-osrm.org/route/v1/driving/" +
     `${pickup.longitude},${pickup.latitude};${destination.longitude},${destination.latitude}` +
@@ -330,6 +431,7 @@ export async function getRoadRoute(
   }
 
   return {
+    provider: "osrm" as const,
     distanceKm: Number((Number(route.distance ?? 0) / 1000).toFixed(2)),
     durationMinutes: Math.max(
       1,

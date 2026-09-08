@@ -10,12 +10,32 @@ import {
   listDriverDeliveryJobs,
   updateDeliveryJobStatus,
   getCustomerDeliveryTracking,
+  getCustomerActiveDelivery,
 } from "./delivery.service.js";
 
 export const deliveryRouter = Router();
 
 deliveryRouter.use(requireAuth);
 
+deliveryRouter.get(
+  "/customer/active",
+  requireAccountTypes("passenger"),
+  async (req, res, next) => {
+    try {
+      const job =
+        await getCustomerActiveDelivery(
+          req.authUser!.id,
+        );
+
+      res.json({
+        success: true,
+        data: { job },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 deliveryRouter.get(
   "/customer/:type/:sourceId/tracking",

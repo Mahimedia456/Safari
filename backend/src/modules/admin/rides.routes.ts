@@ -10,6 +10,63 @@ import { supabaseAdmin } from "../../lib/supabase.js";
 
 export const adminRidesRouter = Router();
 
+async function hydrateAdminRideRelations<T extends Record<string, any>>(rides: T[]) {
+  if (rides.length === 0) return rides;
+
+  const cityIds = [...new Set(rides.map((ride) => ride.city_id ?? ride.service_city_id ?? null).filter(Boolean))];
+  const profileIds = [...new Set(rides.flatMap((ride) => [ride.passenger_id, ride.driver_id]).filter(Boolean))];
+  const vehicleIds = [...new Set(rides.map((ride) => ride.vehicle_id).filter(Boolean))];
+  const categoryIds = [...new Set(rides.map((ride) => ride.ride_category_id).filter(Boolean))];
+
+  const [citiesResult, profilesResult, vehiclesResult, categoriesResult] = await Promise.all([
+    cityIds.length
+      ? supabaseAdmin
+          .from("service_cities")
+          .select("id,name,city_code,country_code,currency_code")
+          .in("id", cityIds)
+      : Promise.resolve({ data: [], error: null }),
+    profileIds.length
+      ? supabaseAdmin
+          .from("profiles")
+          .select("id,full_name,phone,avatar_url,average_rating,rating_count")
+          .in("id", profileIds)
+      : Promise.resolve({ data: [], error: null }),
+    vehicleIds.length
+      ? supabaseAdmin
+          .from("driver_vehicles")
+          .select("id,make,model,year,color,plate_number,vehicle_type,ride_category")
+          .in("id", vehicleIds)
+      : Promise.resolve({ data: [], error: null }),
+    categoryIds.length
+      ? supabaseAdmin
+          .from("ride_categories")
+          .select("id,code,name,vehicle_type,passenger_capacity,service_tier")
+          .in("id", categoryIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  for (const result of [citiesResult, profilesResult, vehiclesResult, categoriesResult]) {
+    if (result.error) throw new Error(result.error.message);
+  }
+
+  const cityMap = new Map((citiesResult.data ?? []).map((row) => [row.id, row]));
+  const profileMap = new Map((profilesResult.data ?? []).map((row) => [row.id, row]));
+  const vehicleMap = new Map((vehiclesResult.data ?? []).map((row) => [row.id, row]));
+  const categoryMap = new Map((categoriesResult.data ?? []).map((row) => [row.id, row]));
+
+  return rides.map((ride) => {
+    const cityId = ride.city_id ?? ride.service_city_id ?? null;
+    return {
+      ...ride,
+      service_cities: cityId ? cityMap.get(cityId) ?? null : null,
+      passenger_profile: ride.passenger_id ? profileMap.get(ride.passenger_id) ?? null : null,
+      driver_profile: ride.driver_id ? profileMap.get(ride.driver_id) ?? null : null,
+      driver_vehicles: ride.vehicle_id ? vehicleMap.get(ride.vehicle_id) ?? null : null,
+      ride_categories: ride.ride_category_id ? categoryMap.get(ride.ride_category_id) ?? null : null,
+    };
+  });
+}
+
 adminRidesRouter.use(
   requireAuth,
   requireAccountTypes("administration"),
@@ -247,27 +304,17 @@ adminRidesRouter.get("/", async (req, res, next) => {
 
     let builder = supabaseAdmin
       .from("rides")
-      .select(`
-        *,
-        ride_categories (
-          code,
-          name
-        ),
-        service_cities (
-          name,
-          city_code
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (query.status) builder = builder.eq("ride_status", query.status);
-    if (query.cityId) builder = builder.eq("service_city_id", query.cityId);
+    if (query.cityId) builder = builder.eq("city_id", query.cityId);
 
     const { data, error } = await builder;
 
     if (error) throw new Error(error.message);
 
-    let rides = data;
+    let rides = await hydrateAdminRideRelations(data ?? []);
 
     if (query.search) {
       const search = query.search.toLowerCase();
@@ -304,11 +351,7 @@ adminRidesRouter.get("/:rideId", async (req, res, next) => {
     const [rideResult, eventsResult] = await Promise.all([
       supabaseAdmin
         .from("rides")
-        .select(`
-          *,
-          ride_categories (*),
-          service_cities (*)
-        `)
+        .select("*")
         .eq("id", rideId)
         .single(),
 
@@ -322,10 +365,12 @@ adminRidesRouter.get("/:rideId", async (req, res, next) => {
     if (rideResult.error) throw new Error(rideResult.error.message);
     if (eventsResult.error) throw new Error(eventsResult.error.message);
 
+    const [ride] = await hydrateAdminRideRelations([rideResult.data]);
+
     res.json({
       success: true,
       data: {
-        ride: rideResult.data,
+        ride,
         events: eventsResult.data,
       },
     });

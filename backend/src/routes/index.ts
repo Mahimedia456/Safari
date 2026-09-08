@@ -29,11 +29,13 @@ import { adminNotificationsRouter } from "../modules/admin/notifications.routes.
 import { storageRouter } from "../modules/storage/storage.routes.js";
 import { adminAnalyticsRouter } from "../modules/admin/analytics.routes.js";
 import { systemRouter } from "../modules/system/system.routes.js";
+import { whatsappWebhookRouter } from "../modules/whatsapp/whatsapp-webhook.routes.js";
 
 export const apiRouter = Router();
 
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/webhooks", whatsappWebhookRouter);
 apiRouter.use("/profiles", profileRouter);
 
 apiRouter.use("/passengers", passengerRouter);
